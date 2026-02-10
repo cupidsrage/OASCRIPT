@@ -10582,8 +10582,15 @@ secCheckbox.addEventListener('change', () => {
         const parsed = parseBeastAlert(rawText);
         if (!parsed) return;
 
-        // Create a unique key for this message
-        const msgId = el?.dataset?.messageId || el?.dataset?.messageid || rawText.slice(0, 100);
+        // Create a stable key for this message across descendants/rerenders.
+        const msgContainer = el?.closest?.('[data-message-id],[data-messageid]') || el;
+        const msgIdRaw =
+          msgContainer?.dataset?.messageId ||
+          msgContainer?.dataset?.messageid ||
+          msgContainer?.getAttribute?.('data-message-id') ||
+          msgContainer?.getAttribute?.('data-messageid') ||
+          "";
+        const msgId = String(msgIdRaw || (`${parsed.kind}|${parsed.beastName || ''}|${normalizeLocation(parsed.location || '')}|${rawText.slice(0, 80)}`));
 
         // Don't do anything on beast death messages
         if (parsed.kind === "slain" || parsed.kind === "vanished") {
@@ -10605,6 +10612,27 @@ secCheckbox.addEventListener('change', () => {
         if (wasMessageProcessed(msgId)) {
           console.log("[AutoBeast] Message already processed, skipping");
           return;
+        }
+
+        // Hard anti-loop guard: don't keep teleporting to the same spawn location.
+        const spawnLoc = normalizeLocation(parsed.location || "");
+        if (spawnLoc) {
+          const lastLoc = normalizeLocation(getLastBeastLocation());
+          if (spawnLoc === lastLoc) {
+            console.log("[AutoBeast] Spawn location already handled, skipping:", spawnLoc);
+            markMessageProcessed(msgId);
+            return;
+          }
+          if (isLocationLocked(spawnLoc)) {
+            console.log("[AutoBeast] Spawn location is teleport-locked, skipping:", spawnLoc);
+            markMessageProcessed(msgId);
+            return;
+          }
+          if (wasRecentlyTeleportedTo(spawnLoc)) {
+            console.log("[AutoBeast] Recently teleported to this spawn, skipping:", spawnLoc);
+            markMessageProcessed(msgId);
+            return;
+          }
         }
 
         // CHECK FRESH FROM LOCALSTORAGE - not the in-memory variable
@@ -10644,6 +10672,12 @@ secCheckbox.addEventListener('change', () => {
         // Mark as processed BEFORE teleporting (this survives page reloads)
         console.log("[AutoBeast] Marking message as processed:", msgId);
         markMessageProcessed(msgId);
+
+        // Record/lock target location before teleport so reloads can't retrigger this spawn.
+        if (spawnLoc) {
+          setLastBeastLocation(spawnLoc);
+          setTeleportLock(spawnLoc);
+        }
 
         console.log("[AutoBeast] *** TELEPORTING via /rc ***");
 
