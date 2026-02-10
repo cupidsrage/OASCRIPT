@@ -5946,8 +5946,9 @@ if (beastOpt) {
 
       console.log('[AutoCombat] botcheck.pausedAuto:', botcheck.pausedAuto);
       if (!botcheck.pausedAuto) {
-        console.log('[AutoCombat] Not paused, skipping resume');
-        return;
+        // This can happen after an in-game soft reload where runtime state resets,
+        // but BOTCHECK_RESUME_KEY is still present. Honor the persisted resume key.
+        console.log('[AutoCombat] pausedAuto flag was reset; resuming from persisted BOTCHECK_RESUME_KEY');
       }
 
       // Set the cleared timestamp and wait 3 seconds before resuming
