@@ -13449,6 +13449,16 @@ function deleteProfile(name) {
   return { ok: true };
 }
 
+function addKingdomAutoBlankStep() {
+  const s = loadSettings();
+  const steps = Array.isArray(s.steps) ? s.steps : [];
+  steps.push({ label: "Step " + (steps.length + 1), mode: "build_army", unit: "", direction: "", structure: "", amount: "" });
+  s.steps = steps;
+  saveSettings(s);
+  try { localStorage.setItem("oa_ka_last_plane_v1", normalizePlaneName(s.plane || "")); } catch {}
+  return true;
+}
+
     function computeRect(s) {
       const minX = Math.min(s.bottomLeft.x, s.topRight.x);
       const maxX = Math.max(s.bottomLeft.x, s.topRight.x);
@@ -14741,12 +14751,7 @@ try {
 } catch (e) { console.error("Multi-scheduler UI error:", e); }
 
       const addBlankStep = () => {
-        const s = loadSettings();
-        const steps = Array.isArray(s.steps) ? s.steps : [];
-        steps.push({ label: "Step " + (steps.length + 1), mode: "build_army", unit: "", direction: "", structure: "", amount: "" });
-        s.steps = steps;
-        saveSettings(s);
-        try { localStorage.setItem("oa_ka_last_plane_v1", normalizePlaneName(s.plane || "")); } catch {}
+        addKingdomAutoBlankStep();
         renderModal();
         renderWidget();
       };
@@ -14802,6 +14807,21 @@ try {
             renderWidget();
           }
         });
+      }
+
+      if (!document.documentElement.dataset.oaKaGlobalAddStepBound) {
+        document.documentElement.dataset.oaKaGlobalAddStepBound = "1";
+        document.addEventListener("click", (ev) => {
+          const btn = ev.target && ev.target.closest ? ev.target.closest("#oa-ka-addstep") : null;
+          if (!btn) return;
+          const modal = document.getElementById("oa-ka-modal");
+          if (!modal || !modal.contains(btn) || modal.style.display === "none") return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          addKingdomAutoBlankStep();
+          renderModal();
+          renderWidget();
+        }, true);
       }
 
       return m;
