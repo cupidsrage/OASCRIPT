@@ -14700,40 +14700,54 @@ try {
 
 } catch (e) { console.error("Multi-scheduler UI error:", e); }
 
-m.querySelector("#oa-ka-refresh").addEventListener("click", async () => {
-        const ok = await refreshOptionsCache();
-        notify(ok ? "Options refreshed." : "Open tab=kingdoms to refresh options.");
-        renderModal();
-      });
-      m.querySelector("#oa-ka-addstep").addEventListener("click", () => {
-        const s = loadSettings();
-        s.steps = Array.isArray(s.steps) ? s.steps : [];
-        s.steps.push({ label: "Step " + (s.steps.length + 1), mode: "build_army", unit: "", direction: "", structure: "", amount: "" });
-        saveSettings(s);
-      try { localStorage.setItem("oa_ka_last_plane_v1", normalizePlaneName(s.plane || "")); } catch {}
-        renderModal();
-        renderWidget();
-      });
+      if (!m.dataset.oaKaActionDelegationBound) {
+        m.dataset.oaKaActionDelegationBound = "1";
+        m.addEventListener("click", async (ev) => {
+          const btn = ev.target && ev.target.closest ? ev.target.closest("button[id]") : null;
+          if (!btn) return;
+          if (!m.contains(btn)) return;
 
-      m.querySelector("#oa-ka-capture").addEventListener("click", async () => {
-        const s = loadSettings();
-        const res = captureStepFromCurrentTile();
-        if (!res.ok) return notify(res.error);
-        s.steps = Array.isArray(s.steps) ? s.steps : [];
-        await refreshOptionsCache();
-        s.steps.push(res.step);
-        saveSettings(s);
-        renderModal();
-        renderWidget();
-        notify("Captured step.");
-      });
-      m.querySelector("#oa-ka-clear").addEventListener("click", () => {
-        const s = loadSettings();
-        s.steps = [];
-        saveSettings(s);
-        renderModal();
-        renderWidget();
-      });
+          if (btn.id === "oa-ka-refresh") {
+            const ok = await refreshOptionsCache();
+            notify(ok ? "Options refreshed." : "Open tab=kingdoms to refresh options.");
+            renderModal();
+            return;
+          }
+
+          if (btn.id === "oa-ka-addstep") {
+            const s = loadSettings();
+            s.steps = Array.isArray(s.steps) ? s.steps : [];
+            s.steps.push({ label: "Step " + (s.steps.length + 1), mode: "build_army", unit: "", direction: "", structure: "", amount: "" });
+            saveSettings(s);
+            try { localStorage.setItem("oa_ka_last_plane_v1", normalizePlaneName(s.plane || "")); } catch {}
+            renderModal();
+            renderWidget();
+            return;
+          }
+
+          if (btn.id === "oa-ka-capture") {
+            const s = loadSettings();
+            const res = captureStepFromCurrentTile();
+            if (!res.ok) return notify(res.error);
+            s.steps = Array.isArray(s.steps) ? s.steps : [];
+            await refreshOptionsCache();
+            s.steps.push(res.step);
+            saveSettings(s);
+            renderModal();
+            renderWidget();
+            notify("Captured step.");
+            return;
+          }
+
+          if (btn.id === "oa-ka-clear") {
+            const s = loadSettings();
+            s.steps = [];
+            saveSettings(s);
+            renderModal();
+            renderWidget();
+          }
+        });
+      }
 
       return m;
     }
