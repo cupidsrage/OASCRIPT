@@ -14832,6 +14832,17 @@ try {
 
 const s = loadSettings();
 
+  // Rebind critical modal buttons on every render so actions still work even if delegated listeners break.
+  const __oaAddStepBtn = m.querySelector("#oa-ka-addstep");
+  if (__oaAddStepBtn) __oaAddStepBtn.onclick = (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (typeof ev.stopImmediatePropagation === "function") ev.stopImmediatePropagation();
+    addKingdomAutoBlankStep();
+    renderModal();
+    renderWidget();
+  };
+
 // Profiles
 try {
   const store = getStore();
