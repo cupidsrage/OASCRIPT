@@ -1,0 +1,1 @@
+{"success":true,"has_match":false,"match_id":0,"tab_enabled":false,"tournament_running":false,"open_tournament_id":0,"open_tournament_name":null,"participant_count":0,"max_participants":0,"is_registered":false}

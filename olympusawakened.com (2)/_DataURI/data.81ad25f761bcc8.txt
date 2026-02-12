@@ -1,0 +1,1 @@
+chrome-extension://podojmkilkljmjjkofbcimbnaodhphhg/aws-recognition.js

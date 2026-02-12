@@ -1,0 +1,1 @@
+{"success":true,"events":[],"last_id":0,"nearby_players":[],"char":{"hp":16861,"max_hp":24340,"gold":1828174640,"silver":3450,"exp":0,"exp_to_next":0,"stat_points":0,"last_monster_id":1313,"current_plane":"underworld","pos_x":26,"pos_y":39,"level":110,"next_action_ts":1770892669,"next_action_ts_ms":1770892669000,"action_delay_ms":null}}

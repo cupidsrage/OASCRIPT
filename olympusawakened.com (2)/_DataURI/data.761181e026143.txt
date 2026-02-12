@@ -1,0 +1,1 @@
+chrome-extension://dhdgffkkebhmkfjojejmpbldmpobfkfo/userscript.html?name=OA-AutoCombat-%252B-Last-Beast-HUD-%252B-CapSolver-Safe-Built-in-Debug.user.js&id=10899947-0309-424b-88e5-5a03f73a1980
