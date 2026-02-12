@@ -7637,7 +7637,19 @@ if (block.blocked && !force) {
           return;
         }
 
-        // Use /rc chat command - it always teleports to the last beast
+        const currentTab = getCurrentTab();
+        const lastBeastForm = (currentTab === "map") ? findTeleportLastBeastForm() : null;
+
+        // Prefer the native Map teleport form when available. It is more reliable than /rc
+        // on some accounts/servers and preserves existing pending/retry semantics.
+        if (currentTab === "map" && lastBeastForm) {
+          console.log("[AutoBeast] Using map teleport_last_beast form");
+          doSubmitLastBeastNow(source, cdKey);
+          return;
+        }
+
+        // Fallback to /rc command when we're not on Map or the form is not hydrated yet.
+        console.log("[AutoBeast] Map form unavailable, falling back to /rc command");
         teleportViaChatCommand(source, cdKey);
       }
 
