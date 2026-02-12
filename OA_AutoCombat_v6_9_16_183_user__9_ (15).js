@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         OA AutoCombat + Last Beast HUD + CapSolver (Safe Built-in Debug)
 // @namespace    http://tampermonkey.net/
-// @version      6.9.33
-// @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.33: Enhanced F1 resume with multiple triggers & detailed logging
+// @version      6.9.34
+// @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.34: Security check no longer auto-resumes combat unless explicitly enabled
 // @author       You
 // @match        https://olympusawakened.com/game.php*
 // @match        https://www.olympusawakened.com/game.php*
@@ -2624,6 +2624,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
   const BEAST_INFLIGHT_KEY = "oa_last_beast_inflight_v1";
   const COORD_PENDING_KEY = "oa_coord_teleport_pending_v1";
   const BOTCHECK_RESUME_KEY = "oa_resume_autocombat_after_botcheck_v1";
+  const BOTCHECK_AUTO_RESUME_ENABLED_KEY = "oa_botcheck_auto_resume_enabled_v1";
   const BOTCHECK_BEEP_KEY = "oa_botcheck_beep_enabled_v1";
   const KINGDOM_RUNNING_KEY = "oa_kingdom_auto_running_v1";
   function isKingdomAutoRunning() {
@@ -5919,8 +5920,35 @@ if (beastOpt) {
     let securityCheckClearedAt = 0;
     const SECURITY_CHECK_COOLDOWN_MS = 3000; // 3 seconds
 
+    function loadBotcheckAutoResumeEnabled() {
+      try {
+        const raw = localStorage.getItem(BOTCHECK_AUTO_RESUME_ENABLED_KEY);
+        if (raw == null) return false; // safer default: require explicit opt-in
+        return Boolean(JSON.parse(raw));
+      } catch {
+        return false;
+      }
+    }
+
+    function saveBotcheckAutoResumeEnabled(v) {
+      try { localStorage.setItem(BOTCHECK_AUTO_RESUME_ENABLED_KEY, JSON.stringify(!!v)); } catch {}
+    }
+
+    _w.autoCombatBotcheckAutoResume = function(v) {
+      if (typeof v === 'undefined') return loadBotcheckAutoResumeEnabled();
+      saveBotcheckAutoResumeEnabled(!!v);
+      console.log(`[AutoCombat] Security-check auto-resume ${v ? 'ENABLED' : 'DISABLED'}`);
+      return loadBotcheckAutoResumeEnabled();
+    };
+
     function resumeAutoCombatIfNeeded() {
       console.log('[AutoCombat] resumeAutoCombatIfNeeded called');
+
+      if (!loadBotcheckAutoResumeEnabled()) {
+        console.log('[AutoCombat] Security-check auto-resume disabled; keeping combat paused.');
+        try { localStorage.removeItem(BOTCHECK_RESUME_KEY); } catch {}
+        return;
+      }
       
       try {
         const resumeKey = localStorage.getItem(BOTCHECK_RESUME_KEY);
@@ -6039,13 +6067,15 @@ if (beastOpt) {
         startBotcheckMonitor();
 
         // Remember we should resume if we were running.
-        if (state.enabled) {
+        if (state.enabled && loadBotcheckAutoResumeEnabled()) {
           botcheck.pausedAuto = true;
           console.log('[AutoCombat] Set botcheck.pausedAuto = true');
           try { 
             localStorage.setItem(BOTCHECK_RESUME_KEY, "1");
             console.log('[AutoCombat] Set BOTCHECK_RESUME_KEY = 1');
           } catch {}
+        } else if (state.enabled) {
+          console.log('[AutoCombat] Auto-resume disabled, not setting BOTCHECK_RESUME_KEY');
         } else {
           console.log('[AutoCombat] state.enabled was false, not setting resume flag');
         }
