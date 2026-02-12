@@ -10643,6 +10643,16 @@ secCheckbox.addEventListener('change', () => {
           "";
         const msgId = String(msgIdRaw || (`${parsed.kind}|${parsed.beastName || ''}|${normalizeLocation(parsed.location || '')}|${rawText.slice(0, 80)}`));
 
+        // Never auto-teleport while dead. Clear pending auto-beast state so
+        // old chat messages cannot keep re-arming teleports before a revive.
+        if (typeof isPlayerDead === "function" && isPlayerDead()) {
+          console.log("[AutoBeast] Player is dead - skipping beast auto teleport processing");
+          try { localStorage.removeItem(BEAST_PENDING_KEY); } catch {}
+          try { localStorage.removeItem(BEAST_INFLIGHT_KEY); } catch {}
+          try { localStorage.removeItem(BEAST_RETURN_KEY); } catch {}
+          return;
+        }
+
         // Don't do anything on beast death messages
         if (parsed.kind === "slain" || parsed.kind === "vanished") {
           console.log("[AutoBeast] Beast died/vanished, ignoring:", parsed.beastName);
