@@ -14740,6 +14740,27 @@ try {
 
 } catch (e) { console.error("Multi-scheduler UI error:", e); }
 
+      const addBlankStep = () => {
+        const s = loadSettings();
+        const steps = Array.isArray(s.steps) ? s.steps : [];
+        steps.push({ label: "Step " + (steps.length + 1), mode: "build_army", unit: "", direction: "", structure: "", amount: "" });
+        s.steps = steps;
+        saveSettings(s);
+        try { localStorage.setItem("oa_ka_last_plane_v1", normalizePlaneName(s.plane || "")); } catch {}
+        renderModal();
+        renderWidget();
+      };
+
+      const addStepBtn = m.querySelector("#oa-ka-addstep");
+      if (addStepBtn && !addStepBtn.dataset.oaKaBound) {
+        addStepBtn.dataset.oaKaBound = "1";
+        addStepBtn.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          addBlankStep();
+        });
+      }
+
       if (!m.dataset.oaKaActionDelegationBound) {
         m.dataset.oaKaActionDelegationBound = "1";
         m.addEventListener("click", async (ev) => {
@@ -14755,13 +14776,7 @@ try {
           }
 
           if (btn.id === "oa-ka-addstep") {
-            const s = loadSettings();
-            s.steps = Array.isArray(s.steps) ? s.steps : [];
-            s.steps.push({ label: "Step " + (s.steps.length + 1), mode: "build_army", unit: "", direction: "", structure: "", amount: "" });
-            saveSettings(s);
-            try { localStorage.setItem("oa_ka_last_plane_v1", normalizePlaneName(s.plane || "")); } catch {}
-            renderModal();
-            renderWidget();
+            addBlankStep();
             return;
           }
 
