@@ -7637,6 +7637,14 @@ if (block.blocked && !force) {
           return;
         }
 
+        // Auto spawn handling should always use /rc so it doesn't depend on Map
+        // tab state or form hydration when a spawn message arrives.
+        if (String(source || "") === "auto") {
+          console.log("[AutoBeast] Auto source: forcing /rc chat command teleport");
+          teleportViaChatCommand(source, cdKey);
+          return;
+        }
+
         const currentTab = getCurrentTab();
         const lastBeastForm = (currentTab === "map") ? findTeleportLastBeastForm() : null;
 
@@ -10668,19 +10676,9 @@ secCheckbox.addEventListener('change', () => {
           return;
         }
 
-        // CRITICAL: Check if there's actually a beast present before teleporting
-        // This prevents teleporting to dead beasts when old spawn messages are in chat
-        const select = document.getElementById("monster-select");
-        const hasBeast = select && Array.from(select.options).some(opt => {
-          return opt.hasAttribute('data-beast-option') ||
-                 (opt.value && String(opt.value).match(/^beast:/i));
-        });
-        
-        if (!hasBeast) {
-          console.log("[AutoBeast] No beast currently present - ignoring old spawn message");
-          markMessageProcessed(msgId); // Mark as processed so we don't keep checking
-          return;
-        }
+        // NOTE: Do NOT require a local beast option before teleporting.
+        // Spawn alerts can be for beasts on a different tile/plane, so the local
+        // dropdown often has no beast option until after teleport.
 
         // Mark as processed BEFORE teleporting (this survives page reloads)
         console.log("[AutoBeast] Marking message as processed:", msgId);
