@@ -12456,6 +12456,8 @@ secCheckbox.addEventListener('change', () => {
       if (typeof updateSingleMapCell === 'function') {
         updateSingleMapCell(normalizedPlane, coords.x, coords.y, kd);
       }
+
+      return { saved: true, panelReady: true, npcCount: npcs.length };
     }
     
     // Extract NPCs from the map panel
@@ -12483,10 +12485,17 @@ secCheckbox.addEventListener('change', () => {
 
     // Save NPCs directly when on map tab (NPC scanning mode)
     function saveNPCsFromMapTab(coords, plane) {
-      if (!coords || !plane) return;
+      if (!coords || !plane) return { saved: false, panelReady: false, npcCount: 0 };
       
       const normalizedPlane = normalizeKDBPlane(plane);
-      if (!normalizedPlane) return;
+      if (!normalizedPlane) return { saved: false, panelReady: false, npcCount: 0 };
+
+      const npcPanel = document.querySelector('[data-map-npcs-panel]');
+      const npcList = npcPanel?.querySelector('[data-map-npcs-list]');
+      if (!npcPanel || !npcList) {
+        console.log('[KingdomDB] [NPC Mode] NPC panel not ready yet, waiting');
+        return { saved: false, panelReady: false, npcCount: 0 };
+      }
       
       // Extract NPCs from map panel
       const npcs = extractNPCsFromDOM();
@@ -12497,7 +12506,7 @@ secCheckbox.addEventListener('change', () => {
       // For now, only save tiles with NPCs
       if (!npcs || npcs.length === 0) {
         console.log('[KingdomDB] [NPC Mode] No NPCs found, skipping save');
-        return;
+        return { saved: false, panelReady: true, npcCount: 0 };
       }
       
       const db = loadKingdomDB();
@@ -12525,6 +12534,8 @@ secCheckbox.addEventListener('change', () => {
       if (typeof updateSingleMapCell === 'function') {
         updateSingleMapCell(normalizedPlane, coords.x, coords.y, kd);
       }
+
+      return { saved: true, panelReady: true, npcCount: npcs.length };
     }
 
     // Fetch and save kingdom data for current position
@@ -16962,14 +16973,40 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
               gotoTab("map"); 
               return; 
             }
+
+            // Ensure HUD position is synced to this tile before reading NPC panel.
+            try {
+              const hudCoordsEl = document.getElementById("hud-location-coords");
+              const hudText = String(hudCoordsEl?.textContent || "").trim();
+              const coordMatch = hudText.match(/(\d{3}),([^,]+),(\d{3})/);
+              if (coordMatch && st.cur) {
+                const hudX = parseInt(coordMatch[1], 10);
+                const hudY = parseInt(coordMatch[3], 10);
+                if (hudX !== st.cur.x || hudY !== st.cur.y) {
+                  st.positionMismatchCount = (st.positionMismatchCount || 0) + 1;
+                  st.lastActAt = now;
+                  saveState(st);
+                  return;
+                }
+              }
+              st.positionMismatchCount = 0;
+            } catch {}
             
             // Save NPCs directly from map tab (no API call needed!)
             try {
               if (st.cur) {
                 const plane = settings.plane || "";
                 console.log('[KingdomAuto] [NPC Mode] Saving NPCs at', st.cur);
-                saveNPCsFromMapTab(st.cur, plane);
-                
+                const saveResult = saveNPCsFromMapTab(st.cur, plane);
+
+                // If map NPC panel is still loading, stay on this tile and retry.
+                if (!saveResult?.panelReady) {
+                  st.lastActAt = now;
+                  saveState(st);
+                  await sleep(250);
+                  return;
+                }
+
                 // Wait for NPC panel to stabilize
                 await sleep(300);
               }
