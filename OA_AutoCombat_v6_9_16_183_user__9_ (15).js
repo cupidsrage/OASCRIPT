@@ -17143,7 +17143,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
 
           // Wait for character movement animation to complete
           await sleep(300);
-          gotoTab("kingdoms");
+          gotoTab(settings.detectNPCs ? "map" : "kingdoms");
           return;
         }
 
