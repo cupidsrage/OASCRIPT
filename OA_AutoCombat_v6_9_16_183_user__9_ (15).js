@@ -7704,6 +7704,7 @@ function onAutoKey(e) {
 
       btn.click();
       return true;
+    }
 
     // ===== Plane Manager (5-plane aware) =====
     const PLANE_ORDER = ["underworld", "katabasis", "aetheria", "aerion", "olympus"];
