@@ -15518,8 +15518,9 @@ if (!Array.isArray(s.steps) || s.steps.length < 1) {
       renderWidget();
       notify("Kingdom Auto: starting (F4 to stop).");
 
-      // Only visit Map if we need to teleport to the starting corner.
-      if (s.teleportToStart) gotoTab("map");
+      // In NPC detection mode we always operate from the map tab.
+      // Otherwise only visit map if we need to teleport to the starting corner.
+      if (s.detectNPCs || s.teleportToStart) gotoTab("map");
       else gotoTab("kingdoms");
     }
 
@@ -16847,7 +16848,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           st.phase = PHASE.NAV_KINGDOMS;
           st.lastActAt = now;
           saveState(st);
-          gotoTab("kingdoms");
+          gotoTab(settings.detectNPCs ? "map" : "kingdoms");
           return;
         }
 
@@ -16880,7 +16881,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             st.phase = PHASE.NAV_KINGDOMS;
             st.lastActAt = now;
             saveState(st);
-            gotoTab("kingdoms");
+            gotoTab(settings.detectNPCs ? "map" : "kingdoms");
             return;
           }
 
@@ -16891,7 +16892,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             st.phase = PHASE.NAV_KINGDOMS;
             st.lastActAt = now;
             saveState(st);
-            gotoTab("kingdoms");
+            gotoTab(settings.detectNPCs ? "map" : "kingdoms");
             return;
           }
           // stay on map until we confirm position changed
