@@ -12646,12 +12646,25 @@ secCheckbox.addEventListener('change', () => {
       lastFetchedPos = null;
     }
 
+    function isNpcDetectionModeEnabled() {
+      try {
+        const raw = JSON.parse(localStorage.getItem("oa_kingdom_auto_settings_v3") || "null") || {};
+        const active = String(raw.activeProfile || "Default");
+        const profile = raw?.profiles?.[active] || raw?.profiles?.Default || raw;
+        return !!profile?.detectNPCs;
+      } catch {
+        return false;
+      }
+    }
+
     // Start/stop watcher based on tab
     function startKingdomDBPolling() {
       // Check tab periodically and manage watcher
       setInterval(() => {
         const tab = new URL(location.href).searchParams.get("tab") || "";
-        if (tab === "kingdoms" || tab === "map") {
+        const npcMode = isNpcDetectionModeEnabled();
+        const shouldWatchMap = tab === "map" && !npcMode;
+        if (tab === "kingdoms" || shouldWatchMap) {
           startKingdomDBWatcher();
         } else {
           stopKingdomDBWatcher();
@@ -12660,7 +12673,8 @@ secCheckbox.addEventListener('change', () => {
 
       // Initial check
       const tab = new URL(location.href).searchParams.get("tab") || "";
-      if (tab === "kingdoms" || tab === "map") {
+      const npcMode = isNpcDetectionModeEnabled();
+      if (tab === "kingdoms" || (tab === "map" && !npcMode)) {
         startKingdomDBWatcher();
       }
 
