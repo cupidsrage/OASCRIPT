@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         OA AutoCombat + Last Beast HUD + CapSolver (Stealth Mode)
 // @namespace    http://tampermonkey.net/
-// @version      6.9.82
-// @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.82: Add "und" abbreviation for underworld, "aet" for aetheria
+// @version      6.9.83
+// @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.83: Added Tampermonkey @updateURL/@downloadURL metadata for automatic updates
 // @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.77: FIX - Added WAIT_MOVE phase with 200ms delay + position verification - v6.9.58: ⚔️ Auto: ON/OFF button in game header - click to toggle, syncs with F1
 // @author       You
 // @match        https://olympusawakened.com/game.php*
 // @match        https://www.olympusawakened.com/game.php*
 // @match        https://*.olympusawakened.com/game.php*
+// @updateURL    https://raw.githubusercontent.com/OASCRIPT/OASCRIPT/main/OA_AutoCombat_v6_9_16_183_user__9_%20(15).js
+// @downloadURL  https://raw.githubusercontent.com/OASCRIPT/OASCRIPT/main/OA_AutoCombat_v6_9_16_183_user__9_%20(15).js
 // @noframes
 // @run-at       document-end
 // @grant        GM_xmlhttpRequest
