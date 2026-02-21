@@ -1528,6 +1528,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
   let lastSecurityCheckTime = 0;
   let lastSecurityCheckWasAuto = false;
   let securityCheckWasVisible = false;
+  let lastCapSolverAttemptHistory = null;
 
   function recordSecurityCheckAttempt(answer, isAuto) {
     lastSecurityCheckAnswer = answer;
@@ -1611,6 +1612,8 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
       passed: passed,
       auto: lastSecurityCheckWasAuto,
       time: timeTaken,
+      capSolverAttempts: Array.isArray(lastCapSolverAttemptHistory) ? lastCapSolverAttemptHistory : undefined,
+      capSolverAttemptCount: Array.isArray(lastCapSolverAttemptHistory) ? lastCapSolverAttemptHistory.length : undefined,
       at: Date.now()
     });
     if (stats.history.length > 20) stats.history.length = 20;
@@ -1625,6 +1628,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     lastSCModalText = '';
     lastSCFullSolution = '';
     lastSCPositions = null;
+    lastCapSolverAttemptHistory = null;
   }
 
   function recordManualSecurityCheck() {
@@ -2592,12 +2596,16 @@ Respond with ONLY the analysis, no preamble.` }
     removeIsolatedBlackPixels(imageData, width, height, 1);
   }
 
-  function resolveCaptchaPreprocessProfile(stats) {
+  function resolveCaptchaPreprocessProfile(stats, forcedModeOverride = null) {
     let forcedMode = 'auto';
-    try {
-      forcedMode = (localStorage.getItem(CAPSOLVER_PREPROCESS_MODE_KEY) || 'auto').trim().toLowerCase();
-    } catch (e) {
-      forcedMode = 'auto';
+    if (typeof forcedModeOverride === 'string' && forcedModeOverride.trim()) {
+      forcedMode = forcedModeOverride.trim().toLowerCase();
+    } else {
+      try {
+        forcedMode = (localStorage.getItem(CAPSOLVER_PREPROCESS_MODE_KEY) || 'auto').trim().toLowerCase();
+      } catch (e) {
+        forcedMode = 'auto';
+      }
     }
 
     const aliasMap = {
@@ -2632,7 +2640,7 @@ Respond with ONLY the analysis, no preamble.` }
   }
 
   // Preprocess captcha image with dynamic profile selection
-  function preprocessCaptchaImage(img) {
+  function preprocessCaptchaImage(img, forcedProfile = null) {
     console.log('[CapSolver] preprocessCaptchaImage called');
 
     const origWidth = img.naturalWidth || img.width;
@@ -2673,7 +2681,7 @@ Respond with ONLY the analysis, no preamble.` }
     }
 
     const stats = computeCaptchaImageStats(imageData);
-    const { profile, modeSource } = resolveCaptchaPreprocessProfile(stats);
+    const { profile, modeSource } = resolveCaptchaPreprocessProfile(stats, forcedProfile);
 
     console.log(
       '[CapSolver] Preprocess profile:',
@@ -2708,7 +2716,24 @@ Respond with ONLY the analysis, no preamble.` }
     console.log('[CapSolver] Preprocess output ready:', profile, 'size:', base64.length);
     console.log('[CapSolver] Preprocessed image data URL (paste in browser to view):');
     console.log(dataUrl);
-    return base64;
+    return { base64, profile, modeSource };
+  }
+
+  function analyzeCapSolverOutput(rawSolution) {
+    const normalized = String(rawSolution || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const reasons = [];
+
+    if (!normalized) reasons.push("empty");
+    if (normalized.length !== 6) reasons.push("wrong_length");
+    if (!/^[A-Z0-9]{6}$/.test(normalized)) reasons.push("non_alnum");
+    if (/^(.)\1{5}$/.test(normalized)) reasons.push("all_same_char");
+    if (/^(?:0O){3}$|^(?:O0){3}$/.test(normalized)) reasons.push("ambiguous_0o_pattern");
+
+    return {
+      normalized,
+      valid: reasons.length === 0,
+      reasons
+    };
   }
 
   async function autoSolveWithCapSolver() {
@@ -2788,80 +2813,12 @@ Respond with ONLY the analysis, no preamble.` }
       console.log('[CapSolver] Image dimensions:', captchaImg.naturalWidth, 'x', captchaImg.naturalHeight);
       console.log('[CapSolver] Image complete:', captchaImg.complete);
 
-      // Send RAW image to CapSolver - no processing
-      let imageData = '';
-
-      if (imgSrc.startsWith('data:image')) {
-        // Already base64 - but still preprocess it
-        console.log('[CapSolver] Image is base64, preprocessing...');
-        try {
-          imageData = preprocessCaptchaImage(captchaImg);
-          console.log('[CapSolver] Preprocessed base64 image, size:', imageData.length);
-          if (imageData && imageData.length > 100) {
-            console.log('[CapSolver] Preprocessed image data URL (paste in browser to view):');
-            console.log('data:image/png;base64,' + imageData);
-          }
-        } catch (e) {
-          console.log('[CapSolver] Preprocessing failed, using raw base64:', e);
-          imageData = imgSrc.split(',')[1];
-        }
-      } else {
-        // Capture raw image via canvas (no processing, no upscaling)
-        console.log('[CapSolver] Capturing RAW image via canvas...');
-
-        try {
-          // Wait for image to be fully loaded
-          if (!captchaImg.complete || captchaImg.naturalWidth === 0) {
-            console.log('[CapSolver] Waiting for image to load...');
-            await new Promise((resolve, reject) => {
-              const timeout = setTimeout(() => reject(new Error('Image load timeout')), 5000);
-              captchaImg.onload = () => { clearTimeout(timeout); resolve(); };
-              captchaImg.onerror = () => { clearTimeout(timeout); reject(new Error('Image load error')); };
-            });
-          }
-
-          // Create canvas at original size and preprocess to remove noise
-          const canvas = document.createElement('canvas');
-          const origWidth = captchaImg.naturalWidth || captchaImg.width;
-          const origHeight = captchaImg.naturalHeight || captchaImg.height;
-          canvas.width = origWidth;
-          canvas.height = origHeight;
-
-          console.log('[CapSolver] Image size:', origWidth, 'x', origHeight);
-
-          // Use preprocessing to remove golden/brown noise
-          console.log('[CapSolver] Preprocessing image to remove noise...');
-          imageData = preprocessCaptchaImage(captchaImg);
-
-          console.log('[CapSolver] Preprocessed image captured, size:', imageData.length);
-          if (imageData && imageData.length > 100) {
-            console.log('[CapSolver] Preprocessed image data URL (paste in browser to view):');
-            console.log('data:image/png;base64,' + imageData);
-          } else {
-            console.log('[CapSolver] WARNING: Preprocessed image data is empty or too small!');
-          }
-
-        } catch (canvasErr) {
-          console.log('[CapSolver] Canvas capture failed (CORS?), trying fetch...', canvasErr);
-
-          // Fallback to fetch if canvas fails
-          const response = await fetch(imgSrc);
-          const blob = await response.blob();
-          imageData = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-        }
-      }
-
-      if (!imageData) {
-        console.log('[CapSolver] Could not extract image data');
-        return;
-      }
-
-      console.log('[CapSolver] Image captured, sending to CapSolver API...');
+      // Build staged retry plans. First attempt uses baseline settings, retries vary one dimension each.
+      const attemptPlans = [
+        { profile: 'auto', optionOverrides: {}, variation: 'baseline' },
+        { profile: 'raw', optionOverrides: {}, variation: 'retry_profile_raw' },
+        { profile: 'auto', optionOverrides: { score: 0.85 }, variation: 'retry_score_0_85' }
+      ];
 
       const solver = new CapSolverClient();
 
@@ -2883,64 +2840,122 @@ Respond with ONLY the analysis, no preamble.` }
         if (saved) customOptions = JSON.parse(saved);
       } catch {}
 
-      const options = { ...defaultOptions, ...customOptions };
-      console.log('[CapSolver] Using options:', options);
+      const baseOptions = { ...defaultOptions, ...customOptions };
+      console.log('[CapSolver] Base options:', baseOptions);
 
-      // VOTING SYSTEM: Solve 3 times and use the most common answer
-      const NUM_ATTEMPTS = 3;
-      const solutions = [];
+      // Stage 0: submit once, then retry only when output is invalid/known-bad.
+      let solution = '';
+      const attemptHistory = [];
 
-      console.log(`[CapSolver] Starting ${NUM_ATTEMPTS} solve attempts for voting...`);
+      for (let index = 0; index < attemptPlans.length; index++) {
+        const attempt = index + 1;
+        const plan = attemptPlans[index];
+        const attemptOptions = { ...baseOptions, ...plan.optionOverrides };
 
-      for (let attempt = 1; attempt <= NUM_ATTEMPTS; attempt++) {
+        console.log(`[CapSolver] Attempt ${attempt}/${attemptPlans.length} using profile=${plan.profile}, variation=${plan.variation}`);
+
+        let preparedImageData = '';
+        let resolvedProfile = plan.profile;
+        let modeSource = 'n/a';
+
+        if (imgSrc.startsWith('data:image')) {
+          console.log('[CapSolver] Image is base64, preprocessing with plan profile...');
+          try {
+            const preprocessResult = preprocessCaptchaImage(captchaImg, plan.profile);
+            preparedImageData = preprocessResult?.base64 || '';
+            resolvedProfile = preprocessResult?.profile || resolvedProfile;
+            modeSource = preprocessResult?.modeSource || modeSource;
+          } catch (e) {
+            console.log('[CapSolver] Preprocessing failed, using raw base64:', e);
+            preparedImageData = imgSrc.split(',')[1];
+            modeSource = 'fallback:raw-base64';
+          }
+        } else {
+          // Capture image via canvas path then preprocess according to plan profile
+          console.log('[CapSolver] Capturing image via canvas for attempt profile:', plan.profile);
+          try {
+            if (!captchaImg.complete || captchaImg.naturalWidth === 0) {
+              console.log('[CapSolver] Waiting for image to load...');
+              await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Image load timeout')), 5000);
+                captchaImg.onload = () => { clearTimeout(timeout); resolve(); };
+                captchaImg.onerror = () => { clearTimeout(timeout); reject(new Error('Image load error')); };
+              });
+            }
+
+            const preprocessResult = preprocessCaptchaImage(captchaImg, plan.profile);
+            preparedImageData = preprocessResult?.base64 || '';
+            resolvedProfile = preprocessResult?.profile || resolvedProfile;
+            modeSource = preprocessResult?.modeSource || modeSource;
+          } catch (e) {
+            console.log('[CapSolver] Canvas/preprocess capture failed:', e);
+            modeSource = 'capture_failed';
+          }
+        }
+
+        if (!preparedImageData) {
+          const failedMeta = {
+            attempt,
+            profileRequested: plan.profile,
+            profileResolved: resolvedProfile,
+            modeSource,
+            options: attemptOptions,
+            accepted: false,
+            rejectedReason: 'no_image_data',
+            at: Date.now()
+          };
+          attemptHistory.push(failedMeta);
+          console.log('[CapSolver] Attempt rejected:', failedMeta);
+          continue;
+        }
+
+        let rawSolution = '';
+        let analysis;
         try {
-          let rawSolution = await solver.solveImageToText(imageData, options);
-
-          // POST-PROCESS: Clean up the solution for alphanumeric captcha
-          if (rawSolution) {
-            // Convert to uppercase and remove any non-alphanumeric characters
-            rawSolution = rawSolution
-              .toUpperCase()
-              .replace(/[^A-Z0-9]/g, '');
-          }
-
-          console.log(`[CapSolver] Attempt ${attempt}/${NUM_ATTEMPTS}: ${rawSolution}`);
-
-          if (rawSolution && rawSolution.length === 6) {
-            solutions.push(rawSolution);
-          }
+          rawSolution = await solver.solveImageToText(preparedImageData, attemptOptions);
+          analysis = analyzeCapSolverOutput(rawSolution);
         } catch (e) {
-          console.log(`[CapSolver] Attempt ${attempt} failed:`, e.message);
+          analysis = { normalized: '', valid: false, reasons: ['solver_error:' + (e.message || 'unknown')] };
+        }
+
+        const attemptMeta = {
+          attempt,
+          profileRequested: plan.profile,
+          profileResolved: resolvedProfile,
+          modeSource,
+          variation: plan.variation,
+          options: {
+            module: attemptOptions.module,
+            score: attemptOptions.score,
+            case: attemptOptions.case,
+            numeric: attemptOptions.numeric,
+            minLength: attemptOptions.minLength,
+            maxLength: attemptOptions.maxLength
+          },
+          rawSolution: String(rawSolution || ''),
+          normalizedSolution: analysis.normalized,
+          accepted: analysis.valid,
+          rejectedReasons: analysis.reasons,
+          at: Date.now()
+        };
+
+        attemptHistory.push(attemptMeta);
+        console.log('[CapSolver] Attempt result:', attemptMeta);
+
+        if (analysis.valid) {
+          solution = analysis.normalized;
+          break;
         }
       }
 
-      if (solutions.length === 0) {
-        throw new Error('All solve attempts failed');
+      if (!solution) {
+        lastCapSolverAttemptHistory = attemptHistory;
+        throw new Error('No acceptable solution from staged retries');
       }
 
-      // Count occurrences and find the most common solution
-      const counts = {};
-      for (const s of solutions) {
-        counts[s] = (counts[s] || 0) + 1;
-      }
-
-      let solution = solutions[0];
-      let maxCount = 0;
-      for (const [s, count] of Object.entries(counts)) {
-        if (count > maxCount) {
-          maxCount = count;
-          solution = s;
-        }
-      }
-
-      console.log(`[CapSolver] Voting results:`, counts);
-      console.log(`[CapSolver] Winner: ${solution} (${maxCount}/${solutions.length} votes)`);
-
-      console.log('[CapSolver] Full 6-char solution:', solution);
-
-      if (!solution || solution.length !== 6) {
-        throw new Error('Invalid solution length (expected 6 characters, got: ' + solution + ')');
-      }
+      lastCapSolverAttemptHistory = attemptHistory;
+      console.log('[CapSolver] Accepted solution:', solution);
+      console.log('[CapSolver] Attempt history:', attemptHistory);
 
       // Check if the modal asks for specific character positions
       // Look for text like "Enter the 4th character" or "Enter the 1st, 3rd, and 6th character"
@@ -3141,6 +3156,20 @@ Respond with ONLY the analysis, no preamble.` }
 
       const stats = loadCapSolverStats();
       stats.failures = (stats.failures || 0) + 1;
+      if (!stats.history) stats.history = [];
+      if (Array.isArray(lastCapSolverAttemptHistory) && lastCapSolverAttemptHistory.length > 0) {
+        stats.history.unshift({
+          answer: '',
+          passed: false,
+          auto: true,
+          time: 0,
+          capSolverAttempts: lastCapSolverAttemptHistory,
+          capSolverAttemptCount: lastCapSolverAttemptHistory.length,
+          capSolverFailedBeforeSubmit: true,
+          at: Date.now()
+        });
+        if (stats.history.length > 20) stats.history.length = 20;
+      }
       saveCapSolverStats(stats);
 
       try {
@@ -18149,7 +18178,8 @@ Read the image and respond with exactly those two lines.`;
         let base64 = '';
         try {
           if (typeof preprocessCaptchaImage === "function") {
-            base64 = preprocessCaptchaImage(captchaImg);
+            const preprocessResult = preprocessCaptchaImage(captchaImg);
+            base64 = preprocessResult?.base64 || '';
             console.log("[ClaudeSC] Preprocessed image ready");
           }
         } catch {}
