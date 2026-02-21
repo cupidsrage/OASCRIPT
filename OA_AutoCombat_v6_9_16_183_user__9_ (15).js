@@ -2442,7 +2442,196 @@ Respond with ONLY the analysis, no preamble.` }
   let capSolverLastAttempt = 0;
   const CAPSOLVER_MIN_INTERVAL = 10000;
 
-  // Preprocess captcha image - contrast enhancement with noise removal
+  const CAPSOLVER_PREPROCESS_MODE_KEY = 'oa_capsolver_preprocess_mode_v1';
+
+  function computeCaptchaImageStats(pixelData) {
+    const data = pixelData.data;
+    const totalPixels = data.length / 4;
+
+    if (!totalPixels) {
+      return {
+        meanLuminance: 0,
+        brightPixelRatio: 0,
+        dominantColor: 'none',
+        colorDominance: 0,
+        avgR: 0,
+        avgG: 0,
+        avgB: 0
+      };
+    }
+
+    let luminanceSum = 0;
+    let brightCount = 0;
+    let rSum = 0;
+    let gSum = 0;
+    let bSum = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      rSum += r;
+      gSum += g;
+      bSum += b;
+
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+      luminanceSum += luminance;
+      if (luminance > 200) brightCount++;
+    }
+
+    const avgR = rSum / totalPixels;
+    const avgG = gSum / totalPixels;
+    const avgB = bSum / totalPixels;
+    const channelMax = Math.max(avgR, avgG, avgB);
+    const channelMin = Math.min(avgR, avgG, avgB);
+
+    let dominantColor = 'balanced';
+    if (channelMax === avgR) dominantColor = 'red';
+    else if (channelMax === avgG) dominantColor = 'green';
+    else if (channelMax === avgB) dominantColor = 'blue';
+
+    return {
+      meanLuminance: luminanceSum / totalPixels,
+      brightPixelRatio: brightCount / totalPixels,
+      dominantColor,
+      colorDominance: channelMax ? (channelMax - channelMin) / channelMax : 0,
+      avgR,
+      avgG,
+      avgB
+    };
+  }
+
+  function countBlackNeighbors(data, width, height, x, y) {
+    let count = 0;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+          const idx = (ny * width + nx) * 4;
+          if (data[idx] === 0) count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  function removeIsolatedBlackPixels(imageData, width, height, minNeighbors = 2) {
+    const data = imageData.data;
+    const result = new Uint8ClampedArray(data.length);
+    result.set(data);
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        if (data[idx] === 0) {
+          const neighbors = countBlackNeighbors(data, width, height, x, y);
+          if (neighbors < minNeighbors) {
+            result[idx] = 255;
+            result[idx + 1] = 255;
+            result[idx + 2] = 255;
+          }
+        }
+      }
+    }
+
+    data.set(result);
+  }
+
+  function applyHighContrastProfile(imageData, width, height) {
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      const isPinkText = (r > 180 && b > 150 && r > g + 20);
+      const isWhiteText = (r > 200 && g > 200 && b > 200);
+      const isVeryBright = luminance > 180;
+
+      if (isPinkText || isWhiteText || isVeryBright) {
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+      } else {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+      }
+    }
+
+    removeIsolatedBlackPixels(imageData, width, height, 2);
+    removeIsolatedBlackPixels(imageData, width, height, 2);
+  }
+
+  function applyLightDenoiseProfile(imageData, width, height) {
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      const isTextLike = (r > 165 && b > 130 && r > g + 12) || luminance > 190;
+      if (isTextLike) {
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+      } else {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+      }
+    }
+
+    removeIsolatedBlackPixels(imageData, width, height, 1);
+  }
+
+  function resolveCaptchaPreprocessProfile(stats) {
+    let forcedMode = 'auto';
+    try {
+      forcedMode = (localStorage.getItem(CAPSOLVER_PREPROCESS_MODE_KEY) || 'auto').trim().toLowerCase();
+    } catch (e) {
+      forcedMode = 'auto';
+    }
+
+    const aliasMap = {
+      auto: 'auto',
+      raw: 'raw',
+      none: 'raw',
+      off: 'raw',
+      bypass: 'raw',
+      light: 'light_denoise',
+      light_denoise: 'light_denoise',
+      denoise: 'light_denoise',
+      high: 'high_contrast',
+      contrast: 'high_contrast',
+      high_contrast: 'high_contrast'
+    };
+
+    const normalizedForced = aliasMap[forcedMode] || 'auto';
+    if (normalizedForced !== 'auto') {
+      return { profile: normalizedForced, modeSource: `forced:${forcedMode}` };
+    }
+
+    const cleanImage = stats.meanLuminance > 185 && stats.brightPixelRatio > 0.72 && stats.colorDominance < 0.10;
+    if (cleanImage) {
+      return { profile: 'raw', modeSource: 'auto-clean-bypass' };
+    }
+
+    if (stats.colorDominance > 0.16 || stats.meanLuminance < 125 || stats.brightPixelRatio < 0.32) {
+      return { profile: 'high_contrast', modeSource: 'auto-noisy-or-low-contrast' };
+    }
+
+    return { profile: 'light_denoise', modeSource: 'auto-balanced' };
+  }
+
+  // Preprocess captcha image with dynamic profile selection
   function preprocessCaptchaImage(img) {
     console.log('[CapSolver] preprocessCaptchaImage called');
 
@@ -2454,7 +2643,6 @@ Respond with ONLY the analysis, no preamble.` }
       return '';
     }
 
-    // Scale up 2x for better OCR
     const scale = 2;
     const width = origWidth * scale;
     const height = origHeight * scale;
@@ -2466,7 +2654,6 @@ Respond with ONLY the analysis, no preamble.` }
     canvas.width = width;
     canvas.height = height;
 
-    // Use smooth scaling for better quality
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
@@ -2477,7 +2664,6 @@ Respond with ONLY the analysis, no preamble.` }
       return '';
     }
 
-    // Get pixel data
     let imageData;
     try {
       imageData = ctx.getImageData(0, 0, width, height);
@@ -2486,126 +2672,29 @@ Respond with ONLY the analysis, no preamble.` }
       return '';
     }
 
-    const data = imageData.data;
+    const stats = computeCaptchaImageStats(imageData);
+    const { profile, modeSource } = resolveCaptchaPreprocessProfile(stats);
 
-    // PASS 1: Convert to binary (black text on white background)
-    // Use stricter threshold to keep only the brightest pixels as text
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
+    console.log(
+      '[CapSolver] Preprocess profile:',
+      profile,
+      `(${modeSource})`,
+      '| stats:',
+      `meanLum=${stats.meanLuminance.toFixed(1)}`,
+      `brightRatio=${stats.brightPixelRatio.toFixed(3)}`,
+      `dominant=${stats.dominantColor}`,
+      `dominance=${stats.colorDominance.toFixed(3)}`
+    );
 
-      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-
-      // Text characteristics - be more strict to reduce noise
-      // Pink/magenta text has high R and B
-      const isPinkText = (r > 180 && b > 150 && r > g + 20);
-      // White/bright text
-      const isWhiteText = (r > 200 && g > 200 && b > 200);
-      // Very bright pixels
-      const isVeryBright = luminance > 180;
-
-      if (isPinkText || isWhiteText || isVeryBright) {
-        // Text = black
-        data[i] = 0;
-        data[i + 1] = 0;
-        data[i + 2] = 0;
-      } else {
-        // Background = white
-        data[i] = 255;
-        data[i + 1] = 255;
-        data[i + 2] = 255;
-      }
+    if (profile === 'high_contrast') {
+      applyHighContrastProfile(imageData, width, height);
+      ctx.putImageData(imageData, 0, 0);
+    } else if (profile === 'light_denoise') {
+      applyLightDenoiseProfile(imageData, width, height);
+      ctx.putImageData(imageData, 0, 0);
+    } else {
+      console.log('[CapSolver] Bypassing preprocessing (raw mode)');
     }
-
-    ctx.putImageData(imageData, 0, 0);
-
-    // PASS 2: Remove small isolated noise (connected component filtering)
-    // A black pixel needs enough black neighbors to survive
-    const imageData2 = ctx.getImageData(0, 0, width, height);
-    const data2 = imageData2.data;
-    const result = new Uint8ClampedArray(data2.length);
-    result.set(data2);
-
-    // Count black neighbors in a 3x3 area
-    function countBlackNeighbors(x, y) {
-      let count = 0;
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          if (dx === 0 && dy === 0) continue;
-          const nx = x + dx;
-          const ny = y + dy;
-          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-            const idx = (ny * width + nx) * 4;
-            if (data2[idx] === 0) count++;
-          }
-        }
-      }
-      return count;
-    }
-
-    // Remove isolated black pixels (noise) - need at least 2 black neighbors
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4;
-        if (data2[idx] === 0) { // Black pixel
-          const neighbors = countBlackNeighbors(x, y);
-          if (neighbors < 2) {
-            // Isolated noise - make white
-            result[idx] = 255;
-            result[idx + 1] = 255;
-            result[idx + 2] = 255;
-          }
-        }
-      }
-    }
-
-    // Apply noise removal
-    for (let i = 0; i < result.length; i++) {
-      data2[i] = result[i];
-    }
-
-    // PASS 3: Second noise removal pass with stricter threshold
-    const result2 = new Uint8ClampedArray(data2.length);
-    result2.set(data2);
-
-    function countBlackNeighbors2(x, y) {
-      let count = 0;
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          if (dx === 0 && dy === 0) continue;
-          const nx = x + dx;
-          const ny = y + dy;
-          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-            const idx = (ny * width + nx) * 4;
-            if (data2[idx] === 0) count++;
-          }
-        }
-      }
-      return count;
-    }
-
-    // Remove pixels with only 1 neighbor (thin noise strands)
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4;
-        if (data2[idx] === 0) {
-          const neighbors = countBlackNeighbors2(x, y);
-          if (neighbors < 2) {
-            result2[idx] = 255;
-            result2[idx + 1] = 255;
-            result2[idx + 2] = 255;
-          }
-        }
-      }
-    }
-
-    // Apply second pass
-    for (let i = 0; i < result2.length; i++) {
-      data2[i] = result2[i];
-    }
-
-    ctx.putImageData(imageData2, 0, 0);
 
     let dataUrl;
     try {
@@ -2616,7 +2705,7 @@ Respond with ONLY the analysis, no preamble.` }
     }
 
     const base64 = dataUrl.split(',')[1] || '';
-    console.log('[CapSolver] Preprocessed image ready, size:', base64.length);
+    console.log('[CapSolver] Preprocess output ready:', profile, 'size:', base64.length);
     console.log('[CapSolver] Preprocessed image data URL (paste in browser to view):');
     console.log(dataUrl);
     return base64;
