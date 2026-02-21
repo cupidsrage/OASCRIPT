@@ -36,30 +36,30 @@
     quietLogs: true, // Reduce console spam
     addMistakes: true, // Simulate human errors (missed clicks, wrong keys)
     mistakeChance: 0.015, // 1.5% chance of human-like mistake
-    
+
     // DELAY TUNING - Adjust these for speed vs stealth balance
     redBarDelayMin: 30,     // Min delay after red bar completes (was 50)
     redBarDelayMax: 100,    // Max delay after red bar completes (was 200)
     buttonChangeDelayMin: 80,  // Min delay after button text changes (was 150)
     buttonChangeDelayMax: 200, // Max delay after button text changes (was 400)
-    
+
     // PAUSE CHANCES - Reduce for speed
     microPauseChance: 0.03,    // 3% chance of 0.5-1.5s pause (was 5.8%)
     shortBreakChance: 0.008,   // 0.8% chance of 2-5s break (was 1.5%)
     longPauseChance: 0.001,    // 0.1% chance of 5-10s pause (was 0.3%)
-    
+
     // SAFETY DELAYS - Reduce for maximum speed (WARNING: lower = higher detection risk)
     serverAckGuardMs: 80,      // Server response guard (default 80ms, min 20ms)
     actionEligibleDelayMs: 35, // Action eligibility delay (default 35ms, min 10ms)
-    
+
     // COMBAT ENGINE TIMING - How often script checks for combat actions
     engineIntervalMs: 45,      // Engine heartbeat (default 45ms, ludicrous: 15ms)
     tickThrottleMs: 40,        // Tick throttle (default 40ms, ludicrous: 10ms)
-    
+
     // API POLLING - How often to check hud_state for gold/exp changes
     apiPollIntervalMin: 2000,  // Minimum time between API polls (default 2000ms)
     apiPollIntervalMax: 4000,  // Maximum time between API polls (default 4000ms, adds randomness)
-    
+
     // EARLY FIRE - Act before red bar fully drains (server tolerance testing)
     // 0  = wait for full drain (safest, current behavior)
     // 50 = act when 50ms remain on server timer (test server tolerance)
@@ -70,7 +70,7 @@
   // Keyboard event simulator - more human-like than direct clicks
   function simulateKeyPress(key, target = document.body) {
     if (!STEALTH_CONFIG.useKeyboard) return false;
-    
+
     try {
       const eventOptions = {
         key: key,
@@ -85,13 +85,13 @@
       // Simulate the full keydown -> keypress -> keyup sequence like a real user
       target.dispatchEvent(new KeyboardEvent('keydown', eventOptions));
       target.dispatchEvent(new KeyboardEvent('keypress', eventOptions));
-      
+
       // Small human delay between keydown and keyup (10-40ms)
       const releaseDelay = 10 + Math.random() * 30;
       setTimeout(() => {
         target.dispatchEvent(new KeyboardEvent('keyup', eventOptions));
       }, releaseDelay);
-      
+
       return true;
     } catch (e) {
       if (!STEALTH_CONFIG.quietLogs) console.warn('[Stealth] Key simulation failed:', e);
@@ -202,7 +202,7 @@
       console.log('[Stealth] Available presets:', Object.keys(STEALTH_PRESETS).join(', '));
       return;
     }
-    
+
     Object.assign(STEALTH_CONFIG, preset);
     console.log(`[Stealth] Applied preset: ${preset.name}`);
     console.log('[Stealth] Red bar delay:', `${preset.redBarDelayMin}-${preset.redBarDelayMax}ms`);
@@ -323,7 +323,7 @@
       console.error('[DOM] Tracking not initialized yet. Wait 1-2 seconds after page load.');
       return;
     }
-    
+
     const data = window.__oaDOMTracking.readHudFromDOM();
     console.log('═══════════════════════════════════════════════');
     console.log('       DOM SCRAPING TEST (v6.9.56+)          ');
@@ -372,26 +372,26 @@
   function recordAction(source) {
     const now = Date.now();
     const monitor = source === 'game' ? PERF_MONITOR.gameAuto : PERF_MONITOR.scriptAuto;
-    
+
     if (!monitor.startTime) monitor.startTime = now;
-    
+
     if (monitor.lastActionAt > 0) {
       const timeSinceLastAction = now - monitor.lastActionAt;
       monitor.actionTimes.push(timeSinceLastAction);
-      
+
       // Keep only last N samples
       if (monitor.actionTimes.length > PERF_MONITOR.maxSamples) {
         monitor.actionTimes.shift();
       }
     }
-    
+
     monitor.lastActionAt = now;
     monitor.totalActions++;
   }
 
   function getPerformanceStats(source) {
     const monitor = source === 'game' ? PERF_MONITOR.gameAuto : PERF_MONITOR.scriptAuto;
-    
+
     if (monitor.actionTimes.length === 0) {
       return {
         avgTimePerAction: 0,
@@ -402,12 +402,12 @@
         maxTime: 0,
       };
     }
-    
+
     const sum = monitor.actionTimes.reduce((a, b) => a + b, 0);
     const avg = sum / monitor.actionTimes.length;
     const min = Math.min(...monitor.actionTimes);
     const max = Math.max(...monitor.actionTimes);
-    
+
     return {
       avgTimePerAction: avg,
       actionsPerSecond: 1000 / avg,
@@ -422,12 +422,12 @@
   _w.compareAutoSpeeds = function() {
     const gameStats = getPerformanceStats('game');
     const scriptStats = getPerformanceStats('script');
-    
+
     console.log('═══════════════════════════════════════════════');
     console.log('       AUTO-COMBAT PERFORMANCE COMPARISON      ');
     console.log('═══════════════════════════════════════════════');
     console.log('');
-    
+
     if (gameStats.totalActions > 0) {
       console.log('📊 GAME AUTO (Built-in):');
       console.log(`  Total Actions: ${gameStats.totalActions}`);
@@ -443,7 +443,7 @@
       console.log('📊 GAME AUTO: No data yet (turn on game auto to measure)');
       console.log('');
     }
-    
+
     if (scriptStats.totalActions > 0) {
       console.log('⚡ SCRIPT AUTO (with stealth):');
       console.log(`  Total Actions: ${scriptStats.totalActions}`);
@@ -459,15 +459,15 @@
       console.log('⚡ SCRIPT AUTO: No data yet (turn on script auto to measure)');
       console.log('');
     }
-    
+
     if (gameStats.totalActions > 0 && scriptStats.totalActions > 0) {
       const speedRatio = (scriptStats.actionsPerSecond / gameStats.actionsPerSecond) * 100;
       const timeDiff = scriptStats.avgTimePerAction - gameStats.avgTimePerAction;
-      
+
       console.log('🔍 COMPARISON:');
       console.log(`  Script is ${speedRatio.toFixed(1)}% of game auto speed`);
       console.log(`  Script adds ${timeDiff.toFixed(0)}ms overhead per action`);
-      
+
       if (speedRatio >= 95) {
         console.log('  ✅ Virtually identical speeds!');
       } else if (speedRatio >= 90) {
@@ -479,7 +479,7 @@
       }
       console.log('');
     }
-    
+
     console.log('═══════════════════════════════════════════════');
     console.log('💡 Tips:');
     console.log('  - Use game auto for pure speed (press F3)');
@@ -487,7 +487,7 @@
     console.log('  - Run: useStealthPreset("minimal") for faster script auto');
     console.log('  - Run: resetPerfStats() to clear and restart measurement');
     console.log('═══════════════════════════════════════════════');
-    
+
     return { game: gameStats, script: scriptStats };
   };
 
@@ -1309,7 +1309,7 @@
       if (!STEALTH_CONFIG.quietLogs) console.log('[Stealth] Version badge hidden');
       return;
     }
-    
+
     const BADGE_ID = "oa-script-version-badge";
     const COMBAT_BTN_ID = "oa-autocombat-toggle-btn";
 
@@ -1550,10 +1550,10 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     if (passed) {
       stats.passed = (stats.passed || 0) + 1;
       console.log('[SecurityCheck] PASSED! Answer:', lastSecurityCheckAnswer, 'Auto:', lastSecurityCheckWasAuto, 'Time:', timeTaken, 'ms');
-      
+
       // Trigger resume check MULTIPLE times with different delays for reliability
       console.log('[SecurityCheck] Scheduling resume triggers...');
-      
+
       // Immediate trigger (100ms)
       setTimeout(() => {
         console.log('[SecurityCheck] Immediate resume trigger (100ms)');
@@ -1567,7 +1567,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
           console.warn('[SecurityCheck] Resume trigger error (100ms):', e);
         }
       }, 100);
-      
+
       // Backup trigger (500ms)
       setTimeout(() => {
         console.log('[SecurityCheck] Backup resume trigger (500ms)');
@@ -1579,7 +1579,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
           console.warn('[SecurityCheck] Resume trigger error (500ms):', e);
         }
       }, 500);
-      
+
       // Final fallback trigger (1500ms)
       setTimeout(() => {
         console.log('[SecurityCheck] Final resume trigger (1500ms)');
@@ -1715,33 +1715,33 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
   _w.securityCheckLearning = function() {
     const stats = loadCapSolverStats();
     const history = stats.history || [];
-    
+
     const recentSuccesses = history.filter(h => h.passed).slice(0, 20);
     const recentFailures = history.filter(h => !h.passed).slice(0, 20);
-    
+
     console.log('=== Security Check Learning Insights ===');
     console.log(`Total history: ${history.length} attempts`);
     console.log(`Recent successes: ${recentSuccesses.length}`);
     console.log(`Recent failures: ${recentFailures.length}`);
-    
+
     // Analyze character frequency in successes vs failures
     const successChars = {};
     const failureChars = {};
-    
+
     recentSuccesses.forEach(h => {
       const answer = (h.answer || '').toUpperCase();
       for (const c of answer) {
         successChars[c] = (successChars[c] || 0) + 1;
       }
     });
-    
+
     recentFailures.forEach(h => {
       const answer = (h.answer || '').toUpperCase();
       for (const c of answer) {
         failureChars[c] = (failureChars[c] || 0) + 1;
       }
     });
-    
+
     // Find characters that appear more in failures (potential misreads)
     const suspiciousChars = [];
     for (const [char, failCount] of Object.entries(failureChars)) {
@@ -1751,14 +1751,14 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
         suspiciousChars.push({ char, failCount, successCount, failRatio });
       }
     }
-    
+
     if (suspiciousChars.length > 0) {
       console.log('\nâš ï¸ SUSPICIOUS CHARACTERS (appear more often in failures):');
       suspiciousChars.sort((a, b) => b.failRatio - a.failRatio).forEach(s => {
         console.log(`  "${s.char}": ${(s.failRatio * 100).toFixed(0)}% fail rate (${s.failCount} fails, ${s.successCount} passes)`);
       });
     }
-    
+
     // Show recent failures for manual review
     if (recentFailures.length > 0) {
       console.log('\nâŒ RECENT FAILURES (review these):');
@@ -1767,7 +1767,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
         console.log(`  ${i + 1}. "${h.answer}" - ${timeAgo}m ago`);
       });
     }
-    
+
     // Show recent successes for comparison
     if (recentSuccesses.length > 0) {
       console.log('\nâœ… RECENT SUCCESSES (these worked):');
@@ -1776,7 +1776,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
         console.log(`  ${i + 1}. "${h.answer}" - ${timeAgo}m ago`);
       });
     }
-    
+
     // Calculate rolling accuracy
     const last10 = history.slice(0, 10);
     const last10Passed = last10.filter(h => h.passed).length;
@@ -3349,7 +3349,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
             return opt.hasAttribute('data-beast-option') ||
                    (opt.value && String(opt.value).match(/^beast:/i));
           });
-          
+
           if (hasBeast) {
             url.searchParams.set("tab", "combat");
             console.log("[AutoBeast] Teleport complete -> forcing back to combat tab");
@@ -3938,7 +3938,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
       if (isStart) stats.fightsStarted = (stats.fightsStarted || 0) + 1;
       saveStats(stats);
       notifyStatsUpdated();
-      
+
       // Performance monitoring: record script auto action
       try {
         if (typeof window.__oaRecordAction === 'function') {
@@ -4041,7 +4041,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
     (function setupDOMTracking() {
       // CRITICAL: Read gold/exp/level from DOM instead of API calls
       // This eliminates predictable server-side request patterns!
-      
+
       function readHudFromDOM() {
         const result = {
           gold: null,
@@ -4051,45 +4051,45 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
           hp: null,
           max_hp: null
         };
-        
+
         // Try common element IDs/classes for gold
-        let goldEl = document.getElementById('player-gold-value') || 
+        let goldEl = document.getElementById('player-gold-value') ||
                      document.querySelector('[data-gold-value]') ||
                      document.querySelector('.gold-value') ||
                      document.querySelector('[data-stat="gold"]');
-        
+
         if (goldEl) {
           const goldText = goldEl.textContent.replace(/[^\d]/g, '');
           result.gold = parseInt(goldText, 10);
         }
-        
+
         // Try common element IDs/classes for exp
         let expEl = document.getElementById('player-exp-value') ||
                     document.querySelector('[data-exp-value]') ||
                     document.querySelector('.exp-value') ||
                     document.querySelector('[data-stat="exp"]');
-        
+
         if (expEl) {
           const expText = expEl.textContent.replace(/[^\d]/g, '');
           result.exp = parseInt(expText, 10);
         }
-        
+
         // Exp to next level
         let expNextEl = document.getElementById('player-exp-next') ||
                         document.querySelector('[data-exp-next]') ||
                         document.querySelector('.exp-next');
-        
+
         if (expNextEl) {
           const expNextText = expNextEl.textContent.replace(/[^\d]/g, '');
           result.exp_to_next = parseInt(expNextText, 10);
         }
-        
+
         // Level
         const lvlEl = document.getElementById("player-level-value");
         if (lvlEl) {
           result.level = parseInt(lvlEl.textContent.replace(/[^\d]/g, ''), 10);
         }
-        
+
         // HP
         const hpText = document.getElementById("player-hp-text");
         if (hpText) {
@@ -4099,16 +4099,16 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
             result.max_hp = parseInt(m[2].replace(/,/g, ''), 10);
           }
         }
-        
+
         return result;
       }
-      
+
       // Poll DOM instead of API - much faster, no server calls!
       let domPollInterval = null;
-      
+
       function pollDOMForChanges() {
         const data = readHudFromDOM();
-        
+
         // Only process if we got at least some data
         const gotGold = typeof data.gold === 'number' && !isNaN(data.gold);
         const gotLevel = typeof data.level === 'number' && !isNaN(data.level);
@@ -4211,7 +4211,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
 
       // Start immediately
       setTimeout(start, 1000);
-      
+
       // Expose controls
       window.__oaDOMTracking = { start, stop, readHudFromDOM };
     })();
@@ -4221,12 +4221,12 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
     (function setupRatesPolling_DISABLED() {
       // DISABLED: Now using DOM scraping instead of API calls
       return;
-      
+
       // Poll hud_state.php API for XP/Gold changes
       let pollInterval = null;
       let lastFetchTime = 0;
       let nextFetchAt = 0;
-      
+
       function getRandomizedPollInterval() {
         const min = STEALTH_CONFIG.apiPollIntervalMin || 2000;
         const max = STEALTH_CONFIG.apiPollIntervalMax || 4000;
@@ -4252,7 +4252,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
         // Use randomized throttle to avoid predictable API call patterns
         const now = Date.now();
         if (now < nextFetchAt) return;
-        
+
         // Set next fetch time with randomization
         const interval = getRandomizedPollInterval();
         nextFetchAt = now + interval;
@@ -4909,7 +4909,7 @@ const PIN_COMBAT_UI_KEY = "oa_pin_combat_ui_v1";
           const hour = new Date().getHours();
           const isLateNight = hour < 6 || hour > 22; // Slower late night
           const isPrimetime = hour >= 18 && hour <= 22; // Focused evening
-          
+
           let timeOfDayFactor = 1.0;
           if (isLateNight) timeOfDayFactor = 1.25; // 25% slower when tired
           else if (isPrimetime) timeOfDayFactor = 0.92; // 8% faster when alert
@@ -4930,11 +4930,11 @@ const PIN_COMBAT_UI_KEY = "oa_pin_combat_ui_v1";
           // Long pause: bio break, getting drink
           const distractionRoll = Math.random();
           let distractionMs = 0;
-          
+
           const longChance = STEALTH_CONFIG.longPauseChance || 0.001;
           const shortChance = STEALTH_CONFIG.shortBreakChance || 0.008;
           const microChance = STEALTH_CONFIG.microPauseChance || 0.03;
-          
+
           if (distractionRoll < longChance) {
             distractionMs = randInt(5000, 10000); // Very rare long pause
             slog('Stealth', 'Long pause:', (distractionMs/1000).toFixed(1) + 's');
@@ -4999,7 +4999,7 @@ const PIN_COMBAT_UI_KEY = "oa_pin_combat_ui_v1";
 
 function isCombatDelayClear() {
   const cs = getCombatState();
-  
+
   // Early fire mode: use server timer directly instead of waiting for visual bar
   const earlyFireMs = STEALTH_CONFIG.earlyFireMs || 0;
   if (earlyFireMs > 0) {
@@ -5033,11 +5033,11 @@ function isCombatDelayClear() {
     // If no server timer available, fall through to visual bar check
   }
 
-  // Standard mode: wait for visual bar to drain + cs.delayActive  
+  // Standard mode: wait for visual bar to drain + cs.delayActive
   if (cs && cs.delayActive) return false;
-  
+
   const barReady = isDelayBarReady();
-  
+
   // STEALTH: Don't click instantly when bar completes - add human reaction buffer
   // APPLIES TO ALL PROFILES (instant/fast/humanized) - stealth is non-negotiable
   if (barReady && STEALTH_CONFIG.enabled) {
@@ -5052,12 +5052,12 @@ function isCombatDelayClear() {
       slog('Stealth', `Red bar completed, reaction delay: ${reactionDelay.toFixed(0)}ms`);
       return false;
     }
-    
+
     if (now < state._delayCompleteBuffer) {
       return false; // Still in reaction buffer
     }
   }
-  
+
   return barReady;
 }
 
@@ -5114,7 +5114,7 @@ function isActionAcked(prevSnap, curSnap) {
     // Also reset button text change tracking for next cycle
     state._buttonReadyAfter = null;
     state._buttonTextChangedAt = null;
-    
+
     return true;
   }
   if (curSnap.rem > 0) return true;
@@ -5184,7 +5184,7 @@ function clickCombatAction(el) {
   // Configurable guard delays for server/UI reaction
   const serverGuard = STEALTH_CONFIG.serverAckGuardMs || 80;
   const actionDelay = STEALTH_CONFIG.actionEligibleDelayMs || 35;
-  
+
   state._serverAckGuardUntil = Math.max(state._serverAckGuardUntil || 0, now + serverGuard);
   state.nextEligibleActionAt = Math.max(state.nextEligibleActionAt || 0, now + actionDelay);
 
@@ -5225,12 +5225,12 @@ function gateNextActionAfterWork() {
       if (now - state.lastClickAt < cfg.clickCooldownMs) return;
       if (now - state.lastManualCombatClickAt < 200) return;
       state.lastClickAt = now;
-      
+
       // STEALTH MODE: Use keyboard hotkeys instead of clicking
       if (STEALTH_CONFIG.useKeyboard && el && el.id === 'combat-main-button') {
         const label = (el.textContent || '').trim();
         let hotkey = null;
-        
+
         // Map button labels to their hotkeys
         if (label.includes('Start') || label.includes('Duel')) {
           hotkey = 'f'; // Start (F) or Duel (F)
@@ -5239,7 +5239,7 @@ function gateNextActionAfterWork() {
         } else if (label.includes('Revive')) {
           hotkey = 'r'; // Revive (R)
         }
-        
+
         if (hotkey) {
           // Simulate human mistake occasionally - press wrong key then correct one
           if (shouldMakeMistake()) {
@@ -5259,7 +5259,7 @@ function gateNextActionAfterWork() {
           return;
         }
       }
-      
+
       // Fallback to regular click if not a combat button or stealth disabled
       el.click();
     }
@@ -6982,7 +6982,7 @@ if (beastOpt) {
 
     function resumeAutoCombatIfNeeded() {
       console.log('[AutoCombat] resumeAutoCombatIfNeeded called');
-      
+
       try {
         const resumeKey = localStorage.getItem(BOTCHECK_RESUME_KEY);
         console.log('[AutoCombat] BOTCHECK_RESUME_KEY:', resumeKey);
@@ -7007,7 +7007,7 @@ if (beastOpt) {
 
       console.log('[AutoCombat] botcheck.pausedAuto:', botcheck.pausedAuto);
       console.log('[AutoCombat] state.enabled:', state.enabled);
-      
+
       // AGGRESSIVE: If resume key was set and modal is gone, FORCE RESUME regardless of flags
       // Don't check pausedAuto or state.enabled - just resume!
       console.log('[AutoCombat] FORCING RESUME (aggressive mode)');
@@ -7105,7 +7105,7 @@ if (beastOpt) {
         if (state.enabled) {
           botcheck.pausedAuto = true;
           console.log('[AutoCombat] Set botcheck.pausedAuto = true');
-          try { 
+          try {
             localStorage.setItem(BOTCHECK_RESUME_KEY, "1");
             console.log('[AutoCombat] Set BOTCHECK_RESUME_KEY = 1');
           } catch {}
@@ -7211,48 +7211,48 @@ if (beastOpt) {
       }
 
       const text = combatBtn.textContent.trim();
-      
+
       // STEALTH: Add reaction delay when button text changes (human needs to read new action)
       // APPLIES TO ALL PROFILES (instant/fast/humanized) - stealth is enforced when enabled
       if (STEALTH_CONFIG.enabled && STEALTH_CONFIG.useKeyboard) {
         // Track button text changes
         if (!state._lastButtonText) state._lastButtonText = text;
-        
+
         if (text !== state._lastButtonText) {
           // Button text just changed! (e.g., "Start (F)" → "Attack (A)")
           const now = Date.now();
-          
+
           if (!state._buttonTextChangedAt || state._lastButtonText !== state._buttonTextBeforeChange) {
             // First time seeing this change
             state._buttonTextChangedAt = now;
             state._buttonTextBeforeChange = state._lastButtonText;
             state._lastButtonText = text;
-            
+
             // Human reaction: configurable delay to read new button text and react
             const delayMin = STEALTH_CONFIG.buttonChangeDelayMin || 80;
             const delayMax = STEALTH_CONFIG.buttonChangeDelayMax || 200;
             const readDelay = delayMin + Math.random() * (delayMax - delayMin);
             state._buttonReadyAfter = now + readDelay;
-            
+
             slog('Stealth', `Button changed: "${state._buttonTextBeforeChange}" → "${text}", reaction delay: ${readDelay.toFixed(0)}ms`);
             return; // Don't act yet
           }
-          
+
           state._lastButtonText = text;
         }
-        
+
         // If we're still in reaction delay, don't act
         if (state._buttonReadyAfter && Date.now() < state._buttonReadyAfter) {
           return;
         }
-        
+
         // Clear reaction delay once acted
         if (state._buttonReadyAfter) {
           state._buttonReadyAfter = null;
           state._buttonTextChangedAt = null;
         }
       }
-      
+
       const nowTxt = Date.now();
       if (text !== state._dbgLastBtnText || (nowTxt - (state._dbgLastBtnTextAt || 0)) > 1200) {
         state._dbgLastBtnText = text;
@@ -7297,14 +7297,14 @@ function scheduleCombatTick(reason) {
   if (!state.enabled) return;
   state._combatDirty = true;
   state._combatDirtyReason = String(reason || "");
-  
+
   // If guards have already expired, fire a tick immediately instead of
   // waiting for the next engine interval (saves up to 15ms per action!)
   const now = Date.now();
   const guardsExpired = now >= (state.nextEligibleActionAt || 0) &&
                         now >= (state._serverAckGuardUntil || 0) &&
                         now >= (state._nextTickAt || 0);
-  
+
   if (guardsExpired && state._combatEngineInterval != null) {
     // Schedule a microtask-level tick - faster than setInterval
     Promise.resolve().then(() => {
@@ -7383,7 +7383,7 @@ function ensureCombatObserver() {
   }
 
   scheduleCombatTick("observer-init");
-  
+
   // DEDICATED BUTTON OBSERVER - watches combat button specifically for instant reaction
   // The main observer watches the whole page (slow), this one watches only the button (fast)
   if (!state._buttonObserver) {
@@ -7394,11 +7394,11 @@ function ensureCombatObserver() {
         setTimeout(attachButtonObserver, 200);
         return;
       }
-      
+
       state._buttonObserver = new MutationObserver(() => {
         scheduleCombatTick("button-change");
       });
-      
+
       // Watch the button itself AND its parent (some games swap the element)
       state._buttonObserver.observe(btn, {
         characterData: true,  // Text changes ("Attacking..." → "Attack (A)")
@@ -7406,7 +7406,7 @@ function ensureCombatObserver() {
         attributes: true,     // disabled, class, etc
         subtree: true
       });
-      
+
       // Also watch parent in case button element is replaced entirely
       if (btn.parentElement) {
         state._buttonObserver.observe(btn.parentElement, {
@@ -7414,12 +7414,12 @@ function ensureCombatObserver() {
           subtree: false
         });
       }
-      
+
       console.log("[AutoCombat] Dedicated button observer attached");
     }
     attachButtonObserver();
   }
-  
+
   // Also watch the delay bar specifically for when it empties
   if (!state._delayBarObserver) {
     function attachDelayBarObserver() {
@@ -7428,21 +7428,21 @@ function ensureCombatObserver() {
         setTimeout(attachDelayBarObserver, 200);
         return;
       }
-      
+
       state._delayBarObserver = new MutationObserver(() => {
         scheduleCombatTick("delay-bar-change");
       });
-      
+
       state._delayBarObserver.observe(fill, {
         attributes: true,           // style.width changes
         attributeFilter: ['style'], // Only care about style
       });
-      
+
       console.log("[AutoCombat] Dedicated delay bar observer attached");
     }
     attachDelayBarObserver();
   }
-  
+
   // PROACTIVE TARGET SELECTION - Detect dead monsters IMMEDIATELY
   // This eliminates the 350ms penalty by selecting new targets DURING combat, not after
   if (!state._targetObserver) {
@@ -7452,24 +7452,24 @@ function ensureCombatObserver() {
         // Skip if in combat (can't change target mid-fight anyway)
         const cs = getCombatState();
         if (cs && cs.inCombat) return;
-        
+
         // Check if selected option is now invalid (monster died/vanished)
         const select = document.getElementById("monster-select");
         if (!select) return;
-        
+
         const currentOpt = select.options?.[select.selectedIndex];
         const currentVal = String(select.value || "");
         const currentText = String(currentOpt?.textContent || "").toLowerCase();
-        
-        const isInvalid = 
-          !currentVal || 
+
+        const isInvalid =
+          !currentVal ||
           currentVal === "0" ||
           currentOpt?.disabled ||
-          currentText.includes("vanished") || 
-          currentText.includes("slain") || 
-          currentText.includes("defeated") || 
+          currentText.includes("vanished") ||
+          currentText.includes("slain") ||
+          currentText.includes("defeated") ||
           currentText.includes("fallen");
-        
+
         if (isInvalid) {
           console.log("[ProactiveTarget] Current target invalid, selecting new target immediately");
           try {
@@ -7481,7 +7481,7 @@ function ensureCombatObserver() {
           }
         }
       });
-      
+
       // Watch for changes to the dropdown options (monster dies, new monsters appear)
       state._targetObserver.observe(monsterSelect, {
         childList: true,     // Options added/removed
@@ -7490,11 +7490,11 @@ function ensureCombatObserver() {
         attributes: true,    // disabled attribute changes
         attributeFilter: ['disabled', 'value']
       });
-      
+
       console.log("[ProactiveTarget] Target observer initialized - will detect dead monsters during combat");
     }
   }
-  
+
   // Start performance monitoring loop (runs independently of script auto)
   if (!state._perfMonitorInterval) {
     state._perfMonitorInterval = setInterval(() => {
@@ -7502,7 +7502,7 @@ function ensureCombatObserver() {
         const gameAuto = isGameAutoCombatRunning();
         const cs = getCombatState();
         const delayActive = !!(cs && cs.delayActive);
-        
+
         // Monitor game auto by watching delay bar
         if (gameAuto) {
           // Action detected: delay just became active
@@ -7523,22 +7523,22 @@ function ensureCombatObserver() {
 function teardownCombatObserver() {
   try { if (state._combatObserver) state._combatObserver.disconnect(); } catch {}
   state._combatObserver = null;
-  
+
   try { if (state._buttonObserver) state._buttonObserver.disconnect(); } catch {}
   state._buttonObserver = null;
-  
+
   try { if (state._delayBarObserver) state._delayBarObserver.disconnect(); } catch {}
   state._delayBarObserver = null;
-  
+
   // Clean up proactive target observer
   try { if (state._targetObserver) state._targetObserver.disconnect(); } catch {}
   state._targetObserver = null;
-  
+
   if (state._combatRaf != null) {
     try { cancelAnimationFrame(state._combatRaf); } catch {}
   }
   state._combatRaf = null;
-  
+
   // Clean up performance monitoring interval
   if (state._perfMonitorInterval) {
     try { clearInterval(state._perfMonitorInterval); } catch {}
@@ -8238,7 +8238,7 @@ if (e.key === "[" || e.code === "BracketLeft") handled = (typeof clickPlaneStep 
       console.log('[AutoCombat] Initialization: checking for pending resume...');
       const resumeKey = localStorage.getItem(BOTCHECK_RESUME_KEY);
       console.log('[AutoCombat] Initialization: BOTCHECK_RESUME_KEY =', resumeKey);
-      
+
       if (resumeKey === "1") {
         console.log('[AutoCombat] Initialization: Found pending resume, triggering...');
         // Wait a bit for everything to be ready, then try to resume
@@ -12523,7 +12523,7 @@ secCheckbox.addEventListener('change', () => {
             };
           }
         }
-        
+
         // Fallback to hud-location-coords
         const hudCoordsEl = document.getElementById("hud-location-coords");
         if (hudCoordsEl) {
@@ -12582,20 +12582,20 @@ secCheckbox.addEventListener('change', () => {
       // Normalize plane name
       const normalizedPlane = normalizeKDBPlane(plane);
       if (!normalizedPlane) return;
-      
+
       // Extract NPCs at current location FIRST (before checking owner)
       const npcs = extractNPCsFromDOM();
 
       // Skip unowned/unclaimed kingdoms UNLESS they have NPCs
       const ownerName = kingdomData.owner_name || "";
       const isUnowned = !ownerName || ownerName === "Unruled" || ownerName.toLowerCase() === "unclaimed";
-      
+
       // Check if we already have this kingdom in DB with NPCs
       const db = loadKingdomDB();
       const key = getKingdomKey(normalizedPlane, coords.x, coords.y);
       const existing = db[key];
       const existingHasNPCs = existing && existing.npcs && existing.npcs.length > 0;
-      
+
       if (isUnowned && (!npcs || npcs.length === 0) && !existingHasNPCs) {
         // Skip: unowned AND no NPCs detected AND no NPCs in existing data
         return;
@@ -12625,7 +12625,7 @@ secCheckbox.addEventListener('change', () => {
 
       db[key] = kd;
       saveKingdomDB(db);
-      
+
       const npcInfo = (kd.npcs && kd.npcs.length > 0) ? ` | NPCs: ${kd.npcs.join(', ')}` : '';
       const unownedTag = isUnowned ? ' (Unruled with NPCs)' : '';
       console.log(`[KingdomDB] Saved: ${key} - Owner: ${kd.owner}${unownedTag}${npcInfo} (raw plane: ${plane})`);
@@ -12635,7 +12635,7 @@ secCheckbox.addEventListener('change', () => {
         updateSingleMapCell(normalizedPlane, coords.x, coords.y, kd);
       }
     }
-    
+
     // Extract NPCs from the map panel
     function extractNPCsFromDOM() {
       const npcPanel = document.querySelector('[data-map-npcs-panel]');
@@ -12643,18 +12643,18 @@ secCheckbox.addEventListener('change', () => {
         console.log('[KingdomDB] [NPC Extract] No NPC panel found ([data-map-npcs-panel])');
         return [];
       }
-      
+
       const npcList = npcPanel.querySelector('[data-map-npcs-list]');
       if (!npcList) {
         console.log('[KingdomDB] [NPC Extract] No NPC list found ([data-map-npcs-list])');
         return [];
       }
-      
+
       const npcItems = npcList.querySelectorAll('li');
       console.log('[KingdomDB] [NPC Extract] Found', npcItems.length, 'NPC items in list');
-      
+
       const npcs = [];
-      
+
       for (const item of npcItems) {
         // Extract NPC name from the first span with font-semibold
         const nameEl = item.querySelector('.font-semibold');
@@ -12666,46 +12666,46 @@ secCheckbox.addEventListener('change', () => {
           }
         }
       }
-      
+
       return npcs;
     }
 
     // Save NPCs directly when on map tab (NPC scanning mode)
     function saveNPCsFromMapTab(coords, plane) {
       console.log('[KingdomDB] [NPC Mode] saveNPCsFromMapTab called with:', { coords, plane });
-      
+
       if (!coords || !plane) {
         console.log('[KingdomDB] [NPC Mode] ERROR: Missing coords or plane', { coords, plane });
         return;
       }
-      
+
       const normalizedPlane = normalizeKDBPlane(plane);
       console.log('[KingdomDB] [NPC Mode] Normalized plane:', plane, '→', normalizedPlane);
-      
+
       if (!normalizedPlane) {
         console.log('[KingdomDB] [NPC Mode] ERROR: Plane normalization failed');
         return;
       }
-      
+
       // Extract NPCs from map panel
       const npcs = extractNPCsFromDOM();
-      
+
       console.log('[KingdomDB] [NPC Mode] Extracting NPCs at', coords, '- Found:', npcs.length);
-      
+
       // Only save if NPCs found OR if we want to track empty tiles too
       // For now, only save tiles with NPCs
       if (!npcs || npcs.length === 0) {
         console.log('[KingdomDB] [NPC Mode] No NPCs found, skipping save');
         return;
       }
-      
+
       const db = loadKingdomDB();
       const key = getKingdomKey(normalizedPlane, coords.x, coords.y);
       console.log('[KingdomDB] [NPC Mode] Generated key:', key);
-      
+
       // Check if we already have data for this kingdom
       const existing = db[key] || {};
-      
+
       // Create/update kingdom record with NPCs
       const kd = {
         ...existing,  // Keep any existing data
@@ -12715,12 +12715,12 @@ secCheckbox.addEventListener('change', () => {
         npcs: npcs,
         updatedAt: Date.now(),
       };
-      
+
       db[key] = kd;
       saveKingdomDB(db);
-      
+
       console.log(`[KingdomDB] [NPC Mode] Saved: ${key} | NPCs: ${npcs.join(', ')}`);
-      
+
       // Trigger incremental overlay update if map overlay system is loaded
       if (typeof updateSingleMapCell === 'function') {
         updateSingleMapCell(normalizedPlane, coords.x, coords.y, kd);
@@ -12931,23 +12931,23 @@ secCheckbox.addEventListener('change', () => {
             console.log('[KingdomDB] No location found');
             return false;
           }
-          
+
           // Parse location: "005,olympus,035"
           const parts = locKey.split(',');
           if (parts.length !== 3) {
             console.log('[KingdomDB] Invalid location format:', locKey);
             return false;
           }
-          
+
           const x = parseInt(parts[0], 10);
           const plane = parts[1].trim();
           const y = parseInt(parts[2], 10);
-          
+
           if (!Number.isFinite(x) || !plane || !Number.isFinite(y)) {
             console.log('[KingdomDB] Invalid coordinates:', {x, plane, y});
             return false;
           }
-          
+
           console.log('[KingdomDB] Manually saving NPCs at', {x, y, plane});
           saveNPCsFromMapTab({x, y}, plane);
           return true;
@@ -13032,7 +13032,7 @@ secCheckbox.addEventListener('change', () => {
           if (criteria.maxFortifications !== undefined && fortifications > criteria.maxFortifications) continue;
           if (criteria.unruled === true && kd.owner !== "Unruled") continue;
           if (criteria.unruled === false && kd.owner === "Unruled") continue;
-          
+
           // NPC filtering
           if (criteria.hasNPC === true && (!kd.npcs || kd.npcs.length === 0)) continue;
           if (criteria.npcName) {
@@ -13148,7 +13148,7 @@ secCheckbox.addEventListener('change', () => {
           sortBy: 'fortifications',
         });
       },
-      
+
       // Find kingdoms with NPCs
       withNPCs: (plane = null) => {
         return window.__kingdomDB.find({
@@ -13157,7 +13157,7 @@ secCheckbox.addEventListener('change', () => {
           sortBy: 'coffers',
         });
       },
-      
+
       // Find kingdoms with specific NPC
       findNPC: (npcName, plane = null) => {
         return window.__kingdomDB.find({
@@ -13166,7 +13166,7 @@ secCheckbox.addEventListener('change', () => {
           sortBy: 'coffers',
         });
       },
-      
+
       // Find unowned kingdoms with NPCs (for quest NPCs in unclaimed lands)
       unownedNPCs: (plane = null) => {
         return window.__kingdomDB.find({
@@ -13186,7 +13186,7 @@ secCheckbox.addEventListener('change', () => {
 
         const army = (kd.footmen || 0) + (kd.longbowmen || 0) + (kd.ballistae || 0) + (kd.trebuchets || 0);
         const forts = (kd.keep_total || 0) + (kd.curtain_total || 0) + (kd.castle_total || 0);
-        
+
         let npcSection = '';
         if (kd.npcs && kd.npcs.length > 0) {
           npcSection = `
@@ -14006,7 +14006,7 @@ ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `
               <input id="scout-npc" type="text" placeholder="Any NPC" style="width:100%;padding:4px 6px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;border-radius:4px;box-sizing:border-box;font-size:11px;">
             </div>
           </div>
-          
+
           <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
             <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#94a3b8;cursor:pointer;">
               <input id="scout-has-npc" type="checkbox" style="cursor:pointer;">
@@ -14315,7 +14315,7 @@ ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `
         tr.dataset.plane = r.plane;
         tr.dataset.x = r.x;
         tr.dataset.y = r.y;
-        
+
         const npcIcon = (r.npcs && r.npcs.length > 0) ? ' 🧙' : '';
 
         tr.innerHTML = `
@@ -14911,7 +14911,7 @@ function defaultSettings() {
   const store = getStore();
   const active = store.activeProfile || "Default";
   const p = store.profiles?.[active] ? store.profiles[active] : normalizeProfile(null);
-  
+
   console.log('[KingdomAuto] loadSettings: active profile =', active);
   console.log('[KingdomAuto] loadSettings: profile from store, steps count =', (p?.steps || []).length);
 
@@ -14923,7 +14923,7 @@ function defaultSettings() {
     profiles: store.profiles || { Default: normalizeProfile(null) },
     ...normalizeProfile(p),
   };
-  
+
   console.log('[KingdomAuto] loadSettings: final output, steps count =', (out?.steps || []).length);
   console.log('[KingdomAuto] loadSettings: detectNPCs =', out?.detectNPCs);
 
@@ -16007,7 +16007,7 @@ if (!Array.isArray(s.steps) || s.steps.length < 1) {
           <label>Only unruled tiles (still runs steps on your tiles)
             <select id="oa-ka-onlyunruled"><option value="1">Yes</option><option value="0">No</option></select>
           </label>
-          
+
           <label>Detect NPCs 🧙 (walks on map instead of kingdoms tab)
             <select id="oa-ka-detect-npcs"><option value="0">No (faster)</option><option value="1">Yes (slower)</option></select>
           </label>
@@ -16367,7 +16367,7 @@ m.querySelector("#oa-ka-refresh").addEventListener("click", async () => {
         console.error('[KingdomAuto] Add Step button not found in modal!');
         return;
       }
-      
+
       addStepBtn.addEventListener("click", () => {
         console.log('[KingdomAuto] Add Step clicked');
         try {
@@ -16625,7 +16625,7 @@ try {
   const stepsEl = m.querySelector("#oa-ka-steps");
   stepsEl.innerHTML = "";
   const steps = Array.isArray(s.steps) ? s.steps : [];
-  
+
   console.log('[KingdomAuto] renderModal: steps count =', steps.length);
   console.log('[KingdomAuto] renderModal: steps =', steps);
 
@@ -16675,7 +16675,7 @@ try {
     stepsEl.appendChild(empty);
     return;
   }
-  
+
   console.log('[KingdomAuto] renderModal: Rendering', steps.length, 'steps');
 
   for (let i = 0; i < steps.length; i++) {
@@ -17145,14 +17145,14 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
 
         if (st.phase === PHASE.NAV_KINGDOMS) {
           // Position already verified in WAIT_MOVE phase
-          
+
           // NPC detection mode: stay on map tab only
           if (settings.detectNPCs) {
             if (tab !== "map") {
-              st.lastActAt = now; 
-              saveState(st); 
-              gotoTab("map"); 
-              return; 
+              st.lastActAt = now;
+              saveState(st);
+              gotoTab("map");
+              return;
             }
             st.phase = PHASE.RUN_TILE;
             st.stepIdx = 0;
@@ -17161,13 +17161,13 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             saveState(st);
             return;
           }
-          
+
           // Normal mode: use kingdoms tab
-          if (tab !== "kingdoms") { 
-            st.lastActAt = now; 
-            saveState(st); 
-            gotoTab("kingdoms"); 
-            return; 
+          if (tab !== "kingdoms") {
+            st.lastActAt = now;
+            saveState(st);
+            gotoTab("kingdoms");
+            return;
           }
           st.phase = PHASE.RUN_TILE;
           st.stepIdx = 0;
@@ -17181,12 +17181,12 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           // NPC DETECTION MODE: Stay on map, save NPCs directly, move to next
           if (settings.detectNPCs) {
             if (tab !== "map") {
-              st.lastActAt = now; 
-              saveState(st); 
-              gotoTab("map"); 
-              return; 
+              st.lastActAt = now;
+              saveState(st);
+              gotoTab("map");
+              return;
             }
-            
+
             // Wait for NPC panel to update with new location's NPCs
             // We use a new phase to track this wait
             if (!st.npcPanelWaitStarted) {
@@ -17195,33 +17195,33 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
               saveState(st);
               return;
             }
-            
+
             const waitElapsed = now - st.npcPanelWaitStarted;
             if (waitElapsed < 300) {
               // Wait for NPC panel to load (300ms)
               return;
             }
-            
+
             // Now save NPCs from map tab
             try {
               if (st.cur) {
                 // Read actual plane from DOM instead of relying on settings
                 const mapCoords = getMapCoordsFromDOM();
                 const plane = mapCoords?.plane || settings.plane || "";
-                
+
                 if (!plane) {
                   console.log('[KingdomAuto] [NPC Mode] ERROR: Cannot determine plane name');
                   console.log('[KingdomAuto] [NPC Mode] mapCoords:', mapCoords);
                   console.log('[KingdomAuto] [NPC Mode] settings.plane:', settings.plane);
                 }
-                
+
                 console.log('[KingdomAuto] [NPC Mode] Saving NPCs at', st.cur, 'on plane:', plane);
                 saveNPCsFromMapTab(st.cur, plane);
               }
             } catch (e) {
               console.log('[KingdomAuto] [NPC Mode] Error saving NPCs:', e);
             }
-            
+
             // Done - move to next tile (no kingdom steps in NPC mode)
             st.npcPanelWaitStarted = null; // Reset wait tracker
             st.phase = PHASE.MOVE_NEXT;
@@ -17229,7 +17229,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             saveState(st);
             return;
           }
-          
+
           // NORMAL MODE: Use kingdoms tab, run steps
           if (tab !== "kingdoms") { st.lastActAt = now; saveState(st); gotoTab("kingdoms"); return; }
 
@@ -17367,7 +17367,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
 
           return;
         }
-        
+
         if (st.phase === PHASE.NAV_BACK_MAP) {
           st.phase = PHASE.MOVE_NEXT;
         }
@@ -17377,9 +17377,9 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           const next = computeNextTile(st);
           if (!next) return stop("Kingdom Auto: finished rectangle.");
 
-          try { 
-            await moveMap(next.move); 
-          } catch (e) { 
+          try {
+            await moveMap(next.move);
+          } catch (e) {
             const msg = String(e?.message || e);
             if (msg.includes("cooldown")) {
               // Movement on cooldown - wait and retry
@@ -17408,10 +17408,10 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           if (elapsed < 200) {
             return; // Wait for movement
           }
-          
+
           // Now verify position from DOM
           const mapCoords = getMapCoordsFromDOM();
-          
+
           if (!mapCoords) {
             console.log('[KingdomAuto] ERROR: Cannot read map coords from DOM');
             st.positionMismatchCount = (st.positionMismatchCount || 0) + 1;
@@ -17420,33 +17420,33 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             }
             return; // Retry next tick
           }
-          
+
           if (!st.targetPos) {
             console.log('[KingdomAuto] ERROR: targetPos missing in WAIT_MOVE');
             return stop('[KingdomAuto] Invalid state - no target position');
           }
-          
+
           const targetX = st.targetPos.x;
           const targetY = st.targetPos.y;
 
           if (mapCoords.x !== targetX || mapCoords.y !== targetY) {
             st.positionMismatchCount = (st.positionMismatchCount || 0) + 1;
-            
+
             console.log('[KingdomAuto] Waiting for position update', {
               target: st.targetPos,
               actual: mapCoords,
               elapsed: elapsed + 'ms',
               attempts: st.positionMismatchCount
             });
-            
+
             // Position still not updated - keep waiting
             if (st.positionMismatchCount < 40) { // Increased from 20 to 40 (6 seconds)
               return; // Check again next tick
             } else {
               // Timeout after 6 seconds - use actual DOM position and continue
-              console.log('[KingdomAuto] Position timeout - resyncing to actual position', { 
-                target: st.targetPos, 
-                actual: mapCoords 
+              console.log('[KingdomAuto] Position timeout - resyncing to actual position', {
+                target: st.targetPos,
+                actual: mapCoords
               });
               st.cur = { x: mapCoords.x, y: mapCoords.y };
               st.positionMismatchCount = 0;
@@ -17884,7 +17884,7 @@ Be concise but specific with numbers.`;
       let learningContext = '';
       try {
         const stats = loadCapSolverStats();
-        
+
         // Calculate and show accuracy context
         const passRate = stats.passed > 0 ? ((stats.passed / (stats.passed + stats.rejected)) * 100).toFixed(0) : 0;
         if (stats.passed + stats.rejected >= 5) {
@@ -17944,7 +17944,7 @@ Be concise but specific with numbers.`;
         } catch (e) {
           console.log('[ClaudeSC] Could not load corrections:', e.message);
         }
-        
+
         console.log('[ClaudeSC] Learning context:', learningContext || '(none)');
       } catch (e) {
         console.log('[ClaudeSC] Could not build learning context:', e.message);
@@ -17958,7 +17958,7 @@ Be concise but specific with numbers.`;
 Read the 6 alphanumeric characters (A-Z, 0-9) from this CAPTCHA image.
 
 RESPONSE FORMAT:
-Line 1: Exactly 6 uppercase characters (no spaces, no punctuation)  
+Line 1: Exactly 6 uppercase characters (no spaces, no punctuation)
 Line 2: Your confidence as a number 0-100
 
 Example:
@@ -18010,16 +18010,16 @@ Read the image and respond with exactly those two lines.`;
       const rawText = isGPT
         ? (data.choices?.[0]?.message?.content || "")
         : (data.content?.[0]?.text || "");
-      
+
       // Parse answer and confidence
       // Expected format: "ABC123\n85" or "ABC123\n85%" or just "ABC123"
       const lines = rawText.trim().split('\n');
       const answerLine = lines[0] || '';
       const confidenceLine = lines[1] || '';
-      
+
       // Extract just alphanumeric characters from first line
       const raw = answerLine.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-      
+
       // If response is too long (AI gave explanation), try to find 6-char sequence
       let finalAnswer = raw;
       if (raw.length > 6) {
@@ -18038,18 +18038,18 @@ Read the image and respond with exactly those two lines.`;
           console.warn(`[ClaudeSC] Using first 6 chars as fallback: ${finalAnswer}`);
         }
       }
-      
+
       if (finalAnswer.length !== 6) {
         throw new Error(`${isGPT ? 'GPT' : 'Claude'} didn't return valid 6 chars. Got: "${raw.substring(0, 100)}"`);
       }
-      
+
       // Parse confidence (default to 50 if not provided or unparseable)
       let confidence = 50;
       const confMatch = confidenceLine.match(/(\d+)/);
       if (confMatch) {
         confidence = Math.min(100, Math.max(0, parseInt(confMatch[1])));
       }
-      
+
       console.log(`[ClaudeSC] Solution: ${finalAnswer}, Confidence: ${confidence}%`);
       return { solution: finalAnswer, confidence: confidence };
     }
@@ -18217,7 +18217,7 @@ Read the image and respond with exactly those two lines.`;
         const solutions = [];
         const confidences = [];
         let lowestConfidence = 100;
-        
+
         for (let i = 1; i <= NUM_ATTEMPTS; i++) {
           try {
             const result = await solveWithClaude(base64, rawBase64, modelId);
@@ -18243,15 +18243,15 @@ Read the image and respond with exactly those two lines.`;
         // Just submit whatever the votes agree on
         const CONFIDENCE_THRESHOLD = 0; // Disabled (set to 0 = never refresh)
         const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
-        
+
         console.log(`[ClaudeSC] Confidence stats: lowest=${lowestConfidence}%, avg=${avgConfidence.toFixed(0)}%, threshold=${CONFIDENCE_THRESHOLD}%`);
-        
+
         if (lowestConfidence < CONFIDENCE_THRESHOLD) {
           const refreshBtn = modal.querySelector("[data-botcheck-refresh]");
           if (refreshBtn && typeof refreshBtn.click === 'function') {
             console.log(`[ClaudeSC] ⚠️ Low confidence (${lowestConfidence}%) - auto-refreshing for clearer captcha...`);
-            try { 
-              window.gameNotifications?.show?.(`🔄 Claude SC: Low confidence (${lowestConfidence}%) - refreshing`); 
+            try {
+              window.gameNotifications?.show?.(`🔄 Claude SC: Low confidence (${lowestConfidence}%) - refreshing`);
             } catch {}
             claudeSolveInProgress = false;
             await new Promise(r => setTimeout(r, 500));
@@ -18676,11 +18676,11 @@ Read the image and respond with exactly those two lines.`;
           hudTrack = window.__oaHudTrack;
         }
       } catch {}
-      
+
       const hasRateData = rates.xpPerHour > 0 || rates.goldPerHour > 0;
-      
+
       html += `<div class="sa-sect"><div class="sa-sect-title">💰 Gold & Exp/Hour</div>`;
-      
+
       if (!hasRateData) {
         html += `<div style="color:#94a3b8;font-size:10px;">
           Fight for a few minutes to calculate rates.<br>
@@ -18692,31 +18692,31 @@ Read the image and respond with exactly those two lines.`;
           if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
           return val.toFixed(0);
         };
-        
+
         const xpRate = rates.xpPerHour;
         const goldRate = rates.goldPerHour;
-        
+
         // Calculate bar widths (relative to each other, max gets 100%)
         const maxRate = Math.max(xpRate, goldRate);
         const xpBarWidth = maxRate > 0 ? Math.min(100, (xpRate / maxRate) * 100) : 0;
         const goldBarWidth = maxRate > 0 ? Math.min(100, (goldRate / maxRate) * 100) : 0;
-        
+
         html += `<div style="margin-bottom:6px;">
           <div class="sa-row"><span style="color:#a78bfa;font-weight:600;">⭐ Exp/Hour</span><span style="color:#a78bfa;font-weight:700;">${formatRate(xpRate)}</span></div>
           <div class="sa-bar"><div class="sa-fill" style="width:${xpBarWidth}%;background:#a78bfa;"></div></div>
         </div>`;
-        
+
         html += `<div style="margin-bottom:6px;">
           <div class="sa-row"><span style="color:#fbbf24;font-weight:600;">💰 Gold/Hour</span><span style="color:#fbbf24;font-weight:700;">${formatRate(goldRate)}</span></div>
           <div class="sa-bar"><div class="sa-fill" style="width:${goldBarWidth}%;background:#fbbf24;"></div></div>
         </div>`;
-        
+
         // Show total gains
         if (hudTrack) {
           const totalXp = hudTrack.xpGain || 0;
           const totalGold = hudTrack.goldGain || 0;
           const activeMinutes = (hudTrack.activeMsTotal || 0) / 60000;
-          
+
           if (activeMinutes > 0) {
             html += `<div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;margin-top:2px;font-size:10px;color:#94a3b8;">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;">
@@ -18728,7 +18728,7 @@ Read the image and respond with exactly those two lines.`;
             </div>`;
           }
         }
-        
+
         html += `<div style="font-size:9px;color:#64748b;margin-top:3px;">Based on last 15 min of active combat</div>`;
       }
       html += `</div>`;
@@ -18739,9 +18739,9 @@ Read the image and respond with exactly those two lines.`;
       const hasGameData = gameStats.totalActions > 0;
       const hasScriptData = scriptStats.totalActions > 0;
       const hasBothData = hasGameData && hasScriptData;
-      
+
       html += `<div class="sa-sect"><div class="sa-sect-title">⚡ Auto Speed Comparison</div>`;
-      
+
       if (!hasGameData && !hasScriptData) {
         html += `<div style="color:#94a3b8;font-size:10px;">
           Turn on Game Auto (F3) or Script Auto (F1) to measure speed.<br>
@@ -18762,14 +18762,14 @@ Read the image and respond with exactly those two lines.`;
             <div style="font-size:10px;color:#64748b;margin-top:1px;">Avg: ${avgTime}ms/action | Range: ${gameStats.minTime.toFixed(0)}-${gameStats.maxTime.toFixed(0)}ms</div>
           </div>`;
         }
-        
+
         // Script Auto Stats
         if (hasScriptData) {
           const aps = scriptStats.actionsPerSecond.toFixed(2);
           const avgTime = scriptStats.avgTimePerAction.toFixed(0);
           const speedPct = hasGameData ? (scriptStats.actionsPerSecond / gameStats.actionsPerSecond * 100).toFixed(1) : 100;
           const barWidth = hasGameData ? Math.min(100, parseFloat(speedPct)) : 100;
-          
+
           html += `<div style="margin-bottom:6px;">
             <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;">
               <span style="color:#8b5cf6;font-weight:600;">⚡ Script Auto</span>
@@ -18780,13 +18780,13 @@ Read the image and respond with exactly those two lines.`;
             <div style="font-size:10px;color:#64748b;margin-top:1px;">Avg: ${avgTime}ms/action | Range: ${scriptStats.minTime.toFixed(0)}-${scriptStats.maxTime.toFixed(0)}ms</div>
           </div>`;
         }
-        
+
         // Comparison
         if (hasBothData) {
           const speedRatio = (scriptStats.actionsPerSecond / gameStats.actionsPerSecond) * 100;
           const timeDiff = scriptStats.avgTimePerAction - gameStats.avgTimePerAction;
           let statusColor, statusIcon, statusMsg;
-          
+
           if (speedRatio >= 95) {
             statusColor = "#22c55e";
             statusIcon = "✅";
@@ -18804,7 +18804,7 @@ Read the image and respond with exactly those two lines.`;
             statusIcon = "⚠️";
             statusMsg = "Check stealth preset";
           }
-          
+
           html += `<div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;margin-top:2px;">
             <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
               <span style="color:#94a3b8;">Script is <b style="color:${statusColor}">${speedRatio.toFixed(1)}%</b> of game auto</span>
@@ -18814,16 +18814,16 @@ Read the image and respond with exactly those two lines.`;
             <div style="font-size:10px;color:${statusColor};margin-top:2px;">${statusMsg}</div>
           </div>`;
         }
-        
+
         // Controls
         html += `<div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:6px;padding-top:6px;display:flex;gap:3px;flex-wrap:wrap;">
           <button class="sa-btn" id="sa3-perf-reset" style="font-size:9px;">🔄 Reset Stats</button>
           <button class="sa-btn" id="sa3-perf-console" style="font-size:9px;">📊 Console</button>`;
-        
+
         if (hasScriptData) {
           html += `<button class="sa-btn" id="sa3-perf-tune" style="font-size:9px;">⚡ Speed Tune</button>`;
         }
-        
+
         html += `</div>`;
         html += `<div style="font-size:9px;color:#64748b;margin-top:3px;">Tip: Press F3 to toggle Game/Script Auto</div>`;
       }
@@ -19072,24 +19072,24 @@ Read the image and respond with exactly those two lines.`;
       // Stealth Preset Menu
       setTimeout(() => {
         if (document.getElementById("oa-stealth-preset-selector")) return;
-        
+
         const dd = document.createElement("select");
         dd.id = "oa-stealth-preset-selector";
         dd.style.cssText = "position:fixed;bottom:130px;right:50px;padding:4px 8px;border-radius:8px;font-size:11px;border:2px solid rgba(139,92,246,0.6);background:rgba(139,92,246,0.2);color:#c4b5fd;cursor:pointer;font-weight:600;z-index:99998;";
-        
+
         [['off','❌ OFF'],['maximum','🐌 Max'],['balanced','⚖️ Bal'],['fast','⚡ Fast'],['minimal','🚀 Min'],['ludicrous','💀 Lud']].forEach(([v,l]) => {
           const o = document.createElement("option");
           o.value = v;
           o.textContent = l;
           dd.appendChild(o);
         });
-        
+
         dd.value = localStorage.getItem('oa_stealth_preset_v1') || 'balanced';
-        
+
         dd.onchange = (e) => {
           const val = e.target.value;
           const wasOn = !!(window.__oaState && window.__oaState.enabled);
-          
+
           if (val === 'off') {
             STEALTH_CONFIG.enabled = false;
             STEALTH_CONFIG.useKeyboard = false;
@@ -19105,7 +19105,7 @@ Read the image and respond with exactly those two lines.`;
               console.log('[Stealth] Applied:', p.name);
             }
           }
-          
+
           // Restart combat if it was running
           if (wasOn && window.__oaState) {
             console.log('[Stealth] Restarting combat...');
@@ -19115,7 +19115,7 @@ Read the image and respond with exactly those two lines.`;
             }, 200);
           }
         };
-        
+
         document.body.appendChild(dd);
         console.log('[Stealth] Menu created');
       }, 700);
@@ -19907,44 +19907,116 @@ Format as a numbered implementation plan with code blocks.`;
       updateDisplay(queue);
       LOG('queue='+queue.used+'/'+queue.max+' ready='+queue.items.filter(i=>i.ready).length+' salvage='+salvage);
 
-      // 1. Claim all ready items via fetch (serialize their real forms)
-      const readyItems = queue.items.filter(i=>i.ready && i.claimForm && i.claimBtn);
+      // ── Inventory-full detection ─────────────────────────────────────────────
+      // The server returns a notice/error when claiming fails due to full inventory.
+      // We detect it in the response doc so we don't loop-retry forever.
+      function isInvFullDoc(doc) {
+        const text = (doc.body || doc).textContent || '';
+        return /inventory (is )?full/i.test(text) ||
+               /no (more )?space/i.test(text) ||
+               /can't (carry|hold|claim)/i.test(text) ||
+               !!doc.querySelector('[data-inv-full], .inv-full, .inventory-full');
+      }
+
+      // ── Fetch fresh crafting page state ──────────────────────────────────────
+      // After salvage the response doc may not include claim buttons (server renders
+      // the page differently after a salvage POST). Always fetch a fresh page so we
+      // get accurate queue state before acting on it.
+      async function fetchFreshState() {
+        const freshDoc = await fetch('/game.php?tab=crafting', { credentials: 'include' })
+          .then(r => r.text()).then(h => new DOMParser().parseFromString(h, 'text/html'));
+        patchLiveDom(freshDoc);
+        queue   = parseQueue(freshDoc);
+        salvage = parseSalvageCount(freshDoc);
+        updateDisplay(queue);
+        LOG('Fresh state: queue='+queue.used+'/'+queue.max+' ready='+queue.items.filter(i=>i.ready).length+' salvage='+salvage);
+        return freshDoc;
+      }
+
+      // ── Inline salvage then re-fetch ─────────────────────────────────────────
+      async function doInlineSalvage() {
+        // Always fetch fresh page first to make sure salvage form is in DOM
+        let btn  = document.querySelector('button[value="salvage_all_items"]');
+        let form = btn?.closest('form');
+        if (!form || !btn) {
+          setStatus('Fetching page for salvage form...');
+          await fetchFreshState();
+          btn  = document.querySelector('button[value="salvage_all_items"]');
+          form = btn?.closest('form');
+        }
+        if (!form || !btn) { LOG('No salvage form found even after fresh fetch'); return; }
+
+        setStatus('Salvaging '+salvage+' item(s)...');
+        await sleep(randGauss(700, 180));
+        const doc = await formPost(form, btn);
+        loopsCompleted++;
+        if (_loopEl) _loopEl.textContent = 'Loops: ' + loopsCompleted;
+
+        // Fetch fresh page AFTER salvage so DOM has accurate claim buttons
+        await fetchFreshState();
+        LOG('Salvage complete, salvage now='+salvage);
+      }
+
+      // 1. Claim all ready items
+      let readyItems = queue.items.filter(i=>i.ready && i.claimForm && i.claimBtn);
       if (readyItems.length > 0) {
+        // If inventory has salvageable items, clear space first, then re-read state
+        if (salvage > 0) {
+          setStatus('Salvaging before claim to free inventory...');
+          await doInlineSalvage();
+          // readyItems may have changed — re-read from the freshly patched DOM
+          readyItems = queue.items.filter(i=>i.ready && i.claimForm && i.claimBtn);
+          if (readyItems.length === 0) {
+            // Claim buttons gone after salvage (shouldn't happen) — restart
+            await sleep(300);
+            if (running) runLoop();
+            return;
+          }
+        }
+
         setStatus('Claiming '+readyItems.length+' item(s)...');
         for (const item of readyItems) {
-          await sleep(randGauss(600,150));
-          LOG('Claiming — form fields: queue_id='+item.claimForm.querySelector('[name="queue_id"]')?.value);
+          await sleep(randGauss(600, 150));
+          LOG('Claiming queue_id='+item.claimForm.querySelector('[name="queue_id"]')?.value);
           const doc = await formPost(item.claimForm, item.claimBtn);
-          patchLiveDom(doc);
-          queue   = parseQueue(doc);
-          salvage = parseSalvageCount(doc);
-          updateDisplay(queue);
+
+          // Check if server rejected claim (inv full text in response)
+          const invFullText = (() => {
+            const t = (doc.body||doc).textContent||'';
+            return /inventory.{0,15}full/i.test(t) || /no.{0,8}space/i.test(t);
+          })();
+
+          if (invFullText) {
+            LOG('Server rejected claim — inventory full');
+            setStatus('Inventory full — salvaging to make room...');
+            patchLiveDom(doc);
+            queue   = parseQueue(doc);
+            salvage = parseSalvageCount(doc);
+            await doInlineSalvage();
+            // After salvage+fresh-fetch, queue/salvage/readyItems are updated
+            // Just restart the loop — doInlineSalvage already fetched fresh state
+            await sleep(300);
+            if (running) runLoop();
+            return;
+          }
+
+          // Claim succeeded — update state from fresh fetch (not salvage response)
+          await fetchFreshState();
+          // If new salvage appeared, clear it inline before claiming next item
+          if (salvage > 0) {
+            await doInlineSalvage();
+          }
         }
-        // Loop back to re-check state after claiming
         await sleep(300);
         if (running) runLoop();
         return;
       }
 
-      // 2. Salvage — always do it if there are items, regardless of queue state.
-      //    When returning from a full-inventory combat run, the queue is still occupied
-      //    but we need to clear salvage before we can continue.
+      // 2. Salvage any items in inventory before crafting/mat-checking
       if (salvage > 0) {
-        const salvageBtn = document.querySelector('button[value="salvage_all_items"]');
-        const salvageForm = salvageBtn?.closest('form');
-        if (salvageForm && salvageBtn) {
-          setStatus('Salvaging '+salvage+' item(s)...');
-          await sleep(randGauss(700,180));
-          const doc = await formPost(salvageForm, salvageBtn);
-          patchLiveDom(doc);
-          queue   = parseQueue(doc);
-          salvage = parseSalvageCount(doc);
-          updateDisplay(queue);
-          loopsCompleted++;
-          if(_loopEl) _loopEl.textContent='Loops: '+loopsCompleted;
-          setStatus('Loop '+loopsCompleted+' done — continuing...');
-          await sleep(randGauss(400,100));
-        }
+        await doInlineSalvage();
+        await sleep(randGauss(400, 100));
+        setStatus('Loop '+loopsCompleted+' done — continuing...');
       }
 
       // 3. Check mats before trying to craft
@@ -20283,6 +20355,7 @@ Format as a numbered implementation plan with code blocks.`;
   else setTimeout(init, 500+Math.random()*200);
 
 })();
+
 
 // ===== OA Drop Rate Scanner =====
 // Observes combat log for kills/drops per mob, 100 kills each, then advances to next mob.
