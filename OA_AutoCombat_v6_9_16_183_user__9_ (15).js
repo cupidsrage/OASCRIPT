@@ -8,8 +8,8 @@
 // @match        https://olympusawakened.com/game.php*
 // @match        https://www.olympusawakened.com/game.php*
 // @match        https://*.olympusawakened.com/game.php*
-// @updateURL    https://raw.githubusercontent.com/OASCRIPT/OASCRIPT/main/OA_AutoCombat_v6_9_16_183_user__9_%20(15).js
-// @downloadURL  https://raw.githubusercontent.com/OASCRIPT/OASCRIPT/main/OA_AutoCombat_v6_9_16_183_user__9_%20(15).js
+// @updateURL    https://raw.githubusercontent.com/cupidsrage/OASCRIPT/refs/heads/main/OA_AutoCombat_v6_9_16_183_user__9_%20(15).js
+// @downloadURL  https://raw.githubusercontent.com/cupidsrage/OASCRIPT/refs/heads/main/OA_AutoCombat_v6_9_16_183_user__9_%20(15).js
 // @noframes
 // @run-at       document-end
 // @grant        GM_xmlhttpRequest
