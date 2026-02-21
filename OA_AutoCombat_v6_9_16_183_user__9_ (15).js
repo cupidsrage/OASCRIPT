@@ -536,8 +536,8 @@
         const title = String(btn?.getAttribute("title") || "").toLowerCase();
         const txt = String(btn?.textContent || "").toLowerCase();
         const joined = `${title} ${txt}`;
-        if (joined.includes("ascend") || joined.includes("pâ†‘") || joined.includes("â†‘")) up = pid;
-        if (joined.includes("descend") || joined.includes("pâ†“") || joined.includes("â†“")) down = pid;
+        if (joined.includes("ascend") || joined.includes("p↑") || joined.includes("↑")) up = pid;
+        if (joined.includes("descend") || joined.includes("p↓") || joined.includes("↓")) down = pid;
       }
       const ui = order.indexOf(up);
       const di = order.indexOf(down);
@@ -667,8 +667,8 @@
           const title = String(btn?.getAttribute("title") || "").toLowerCase();
           const txt = String(btn?.textContent || "").toLowerCase();
           const joined = title + " " + txt;
-          if (joined.includes("ascend") || joined.includes("pâ†‘") || joined.includes("â†‘")) up = pid;
-          if (joined.includes("descend") || joined.includes("pâ†“") || joined.includes("â†“")) down = pid;
+          if (joined.includes("ascend") || joined.includes("p↑") || joined.includes("↑")) up = pid;
+          if (joined.includes("descend") || joined.includes("p↓") || joined.includes("↓")) down = pid;
         }
         const ui = PLANE_ORDER.indexOf(up);
         const di = PLANE_ORDER.indexOf(down);
@@ -840,8 +840,8 @@
             const title = String(btn?.getAttribute("title") || "").toLowerCase();
             const txt = String(btn?.textContent || "").toLowerCase();
             const joined = title + " " + txt;
-            if (joined.includes("ascend") || joined.includes("pâ†‘") || joined.includes("â†‘")) up = pid;
-            if (joined.includes("descend") || joined.includes("pâ†“") || joined.includes("â†“")) down = pid;
+            if (joined.includes("ascend") || joined.includes("p↑") || joined.includes("↑")) up = pid;
+            if (joined.includes("descend") || joined.includes("p↓") || joined.includes("↓")) down = pid;
           }
           const ui = order.indexOf(up);
           const di = order.indexOf(down);
@@ -917,8 +917,8 @@
             const title = String(btn?.getAttribute("title") || "").toLowerCase();
             const txt = String(btn?.textContent || "").toLowerCase();
             const joined = title + " " + txt;
-            if (joined.includes("ascend") || joined.includes("pâ†‘") || joined.includes("â†‘")) up = pid;
-            if (joined.includes("descend") || joined.includes("pâ†“") || joined.includes("â†“")) down = pid;
+            if (joined.includes("ascend") || joined.includes("p↑") || joined.includes("↑")) up = pid;
+            if (joined.includes("descend") || joined.includes("p↓") || joined.includes("↓")) down = pid;
           }
           const ui = order.indexOf(up);
           const di = order.indexOf(down);
@@ -1097,8 +1097,8 @@
         if (joined.includes("ascend")) up = planeId;
         if (joined.includes("descend")) down = planeId;
         // fallback arrows
-        if (!up && joined.includes("â†‘")) up = planeId;
-        if (!down && joined.includes("â†“")) down = planeId;
+        if (!up && joined.includes("↑")) up = planeId;
+        if (!down && joined.includes("↓")) down = planeId;
       }
       return { up, down };
     }
@@ -1215,7 +1215,7 @@
       btnCur.type = "button";
       btnCur.textContent = "Lock=Current";
       btnCur.style.cssText = "padding:2px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;cursor:pointer;";
-      btnCur.title = "Set PvE plane lock to your current plane (inferred from Pâ†‘/Pâ†“ buttons).";
+      btnCur.title = "Set PvE plane lock to your current plane (inferred from P↑/P↓ buttons).";
 
       const btnClear = document.createElement("button");
       btnClear.type = "button";
@@ -1869,7 +1869,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     }
 
     if (suspiciousChars.length > 0) {
-      console.log('\nâš ï¸ SUSPICIOUS CHARACTERS (appear more often in failures):');
+      console.log('\n⚠️ SUSPICIOUS CHARACTERS (appear more often in failures):');
       suspiciousChars.sort((a, b) => b.failRatio - a.failRatio).forEach(s => {
         console.log(`  "${s.char}": ${(s.failRatio * 100).toFixed(0)}% fail rate (${s.failCount} fails, ${s.successCount} passes)`);
       });
@@ -1877,7 +1877,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
 
     // Show recent failures for manual review
     if (recentFailures.length > 0) {
-      console.log('\nâŒ RECENT FAILURES (review these):');
+      console.log('\n❌ RECENT FAILURES (review these):');
       recentFailures.slice(0, 10).forEach((h, i) => {
         const timeAgo = Math.round((Date.now() - h.at) / 60000);
         console.log(`  ${i + 1}. "${h.answer}" - ${timeAgo}m ago`);
@@ -1886,7 +1886,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
 
     // Show recent successes for comparison
     if (recentSuccesses.length > 0) {
-      console.log('\nâœ… RECENT SUCCESSES (these worked):');
+      console.log('\n✅ RECENT SUCCESSES (these worked):');
       recentSuccesses.slice(0, 10).forEach((h, i) => {
         const timeAgo = Math.round((Date.now() - h.at) / 60000);
         console.log(`  ${i + 1}. "${h.answer}" - ${timeAgo}m ago`);
@@ -1896,25 +1896,25 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     // Calculate rolling accuracy
     const last10 = history.slice(0, 10);
     const last10Passed = last10.filter(h => h.passed).length;
-    console.log(`\nðŸ“Š Rolling accuracy (last 10): ${last10Passed}/10 = ${(last10Passed * 10)}%`);
+    console.log(`\n📊 Rolling accuracy (last 10): ${last10Passed}/10 = ${(last10Passed * 10)}%`);
 
     // Show human corrections
     const corrections = loadSCCorrections();
     if (corrections.length > 0) {
-      console.log(`\nðŸ‘¨â€ðŸ« HUMAN CORRECTIONS (${corrections.length} stored):`);
+      console.log(`\n👨‍🏫 HUMAN CORRECTIONS (${corrections.length} stored):`);
       corrections.slice(0, 10).forEach((c, i) => {
         let diff = '';
         for (let j = 0; j < 6; j++) {
-          if (c.claudeAnswer[j] !== c.correctAnswer[j]) diff += ` ${c.claudeAnswer[j]}â†’${c.correctAnswer[j]}`;
+          if (c.claudeAnswer[j] !== c.correctAnswer[j]) diff += ` ${c.claudeAnswer[j]}→${c.correctAnswer[j]}`;
         }
-        console.log(`  ${i + 1}. "${c.claudeAnswer}" â†’ "${c.correctAnswer}" (${diff.trim()})`);
+        console.log(`  ${i + 1}. "${c.claudeAnswer}" → "${c.correctAnswer}" (${diff.trim()})`);
       });
     }
 
     const failedImages = loadFailedSCImages();
     const uncorrected = failedImages.filter(f => !f.corrected).length;
     if (uncorrected > 0) {
-      console.log(`\nâ³ ${uncorrected} failed attempts awaiting review. Use reviewFailedSC() or reviewFailedSCVisual()`);
+      console.log(`\n⏳ ${uncorrected} failed attempts awaiting review. Use reviewFailedSC() or reviewFailedSCVisual()`);
     }
 
     return { stats, suspiciousChars, recentSuccesses, recentFailures, corrections };
@@ -1932,7 +1932,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
   let lastSCFullSolution = '';
   let lastSCPositions = null;
 
-  // â”€â”€ SC Failure Notification Interceptor â”€â”€
+  // ── SC Failure Notification Interceptor ──
   // Monkey-patch gameNotifications.show to detect "security check failed" messages
   // This catches BOTH timer expiry AND wrong answer notifications reliably.
   let scNotificationFailDetected = false;
@@ -1947,7 +1947,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
             lower.includes('check failed') || lower.includes('been logged out')) {
           scNotificationFailDetected = true;
           scNotificationFailText = message;
-          console.log('[ClaudeSC-Notify] âŒ Failure notification intercepted:', message);
+          console.log('[ClaudeSC-Notify] ❌ Failure notification intercepted:', message);
         }
         return origShow.call(this, message);
       };
@@ -1971,7 +1971,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
   function saveFailedSCImages(arr) {
     try { localStorage.setItem(SC_FAILED_IMAGES_KEY, JSON.stringify(arr)); } catch (e) {
       while (arr.length > 3) { arr.pop(); try { localStorage.setItem(SC_FAILED_IMAGES_KEY, JSON.stringify(arr)); return; } catch {} }
-      console.warn('[ClaudeSC] Could not save failed images â€” localStorage full');
+      console.warn('[ClaudeSC] Could not save failed images — localStorage full');
     }
   }
   function loadSCCorrections() {
@@ -1997,19 +1997,19 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     });
     if (failures.length > MAX_FAILED_IMAGES) failures.length = MAX_FAILED_IMAGES;
     saveFailedSCImages(failures);
-    console.log(`[ClaudeSC] ðŸ’¾ Failed attempt saved for review (${failures.length} stored). Use reviewFailedSC() or reviewFailedSCVisual()`);
+    console.log(`[ClaudeSC] 💾 Failed attempt saved for review (${failures.length} stored). Use reviewFailedSC() or reviewFailedSCVisual()`);
     try {
       if (window.gameNotifications && typeof window.gameNotifications.show === 'function') {
-        window.gameNotifications.show('ðŸ“¸ SC failure saved for review (' + failures.length + ' stored)');
+        window.gameNotifications.show('📸 SC failure saved for review (' + failures.length + ' stored)');
       }
     } catch {}
   }
 
-  // â”€â”€ Console API: Review failed attempts â”€â”€
+  // ── Console API: Review failed attempts ──
   _w.reviewFailedSC = function(index) {
     const failures = loadFailedSCImages();
     if (failures.length === 0) {
-      console.log('[ClaudeSC] No failed attempts stored. ðŸŽ‰');
+      console.log('[ClaudeSC] No failed attempts stored. 🎉');
       return;
     }
 
@@ -2022,7 +2022,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
       console.log('Claude full solution:', f.fullSolution);
       console.log('Positions extracted:', f.positions || 'none (full code)');
       console.log('Submitted answer:', f.claudeAnswer);
-      console.log('Corrected:', f.corrected ? `âœ… "${f.correctAnswer}"` : 'âŒ Not yet');
+      console.log('Corrected:', f.corrected ? `✅ "${f.correctAnswer}"` : '❌ Not yet');
       if (f.image) {
         const imgUrl = f.image.startsWith('data:') ? f.image : `data:image/png;base64,${f.image}`;
         console.log(`%c `, `font-size:1px; padding:75px 200px; background:url(${imgUrl}) no-repeat center/contain;`);
@@ -2039,13 +2039,13 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
       const timeAgo = Math.round((Date.now() - f.at) / 60000);
       const hrs = Math.floor(timeAgo / 60); const mins = timeAgo % 60;
       const timeStr = hrs > 0 ? `${hrs}h ${mins}m ago` : `${mins}m ago`;
-      const status = f.corrected ? `âœ… corrected â†’ "${f.correctAnswer}"` : 'â³ needs review';
-      console.log(`  ${i}. [${timeStr}] Claude: "${f.claudeAnswer}" (full: "${f.fullSolution}") â€” ${status}`);
+      const status = f.corrected ? `✅ corrected → "${f.correctAnswer}"` : '⏳ needs review';
+      console.log(`  ${i}. [${timeStr}] Claude: "${f.claudeAnswer}" (full: "${f.fullSolution}") — ${status}`);
     });
     return failures;
   };
 
-  // â”€â”€ Console API: Provide correct answer â”€â”€
+  // ── Console API: Provide correct answer ──
   _w.correctSC = function(index, correctAnswer) {
     if (typeof index !== 'number' || typeof correctAnswer !== 'string') {
       console.log('Usage: correctSC(index, "CORRECT6CHARS")');
@@ -2053,7 +2053,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     }
     correctAnswer = correctAnswer.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (correctAnswer.length !== 6) {
-      console.log('[ClaudeSC] âš ï¸ Answer must be exactly 6 alphanumeric characters. Got:', correctAnswer);
+      console.log('[ClaudeSC] ⚠️ Answer must be exactly 6 alphanumeric characters. Got:', correctAnswer);
       return;
     }
 
@@ -2079,21 +2079,21 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     if (corrections.length > 30) corrections.length = 30;
     saveSCCorrections(corrections);
 
-    console.log(`[ClaudeSC] âœ… Correction saved! Claude said "${wrong}" â†’ correct is "${correctAnswer}"`);
+    console.log(`[ClaudeSC] ✅ Correction saved! Claude said "${wrong}" → correct is "${correctAnswer}"`);
     let diff = '  ';
     for (let i = 0; i < 6; i++) {
-      if (wrong[i] !== correctAnswer[i]) diff += `pos${i + 1}: ${wrong[i]}â†’${correctAnswer[i]}  `;
+      if (wrong[i] !== correctAnswer[i]) diff += `pos${i + 1}: ${wrong[i]}→${correctAnswer[i]}  `;
     }
     if (diff.trim()) console.log(`[ClaudeSC] Character corrections: ${diff}`);
 
     // Fire-and-forget: send to Claude for deep analysis
     const imageBase64 = failures[index].image;
     if (imageBase64) {
-      console.log('[ClaudeSC] ðŸ§  Sending to Claude for misread analysis...');
+      console.log('[ClaudeSC] 🧠 Sending to Claude for misread analysis...');
       analyzeSCMisread(imageBase64, wrong, correctAnswer, index).then(analysis => {
         if (analysis) {
-          console.log('[ClaudeSC] ðŸ§  Analysis complete:', analysis);
-          try { window.gameNotifications?.show?.('ðŸ§  SC analysis complete'); } catch {}
+          console.log('[ClaudeSC] 🧠 Analysis complete:', analysis);
+          try { window.gameNotifications?.show?.('🧠 SC analysis complete'); } catch {}
         }
       }).catch(e => {
         console.warn('[ClaudeSC] Analysis failed:', e.message);
@@ -2103,13 +2103,13 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     return { wrong, correct: correctAnswer };
   };
 
-  // â”€â”€ Claude Misread Analysis â”€â”€
+  // ── Claude Misread Analysis ──
   // Sends the image + wrong/correct answers to Claude for deep analysis
   // Stores the analysis in both failed images and corrections for future learning
   async function analyzeSCMisread(imageBase64, wrongAnswer, correctAnswer, failureIndex) {
     const key = localStorage.getItem('oa_ai_api_key_v1');
     if (!key) {
-      console.log('[ClaudeSC] No API key â€” skipping analysis');
+      console.log('[ClaudeSC] No API key — skipping analysis');
       return null;
     }
 
@@ -2127,7 +2127,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     const processedImg = entry?.image || imageBase64;
     const rawImg = entry?.imageRaw || '';
 
-    // Build image content â€” send both when available
+    // Build image content — send both when available
     const imageContent = [];
     if (rawImg) {
       const rawData = rawImg.startsWith('data:') ? rawImg.split(',')[1] : rawImg;
@@ -2220,7 +2220,7 @@ Respond with ONLY the analysis, no preamble.` }
     }
   }
 
-  // â”€â”€ Console API: Visual review popup â”€â”€
+  // ── Console API: Visual review popup ──
   _w.reviewFailedSCVisual = function() {
     const failures = loadFailedSCImages();
     if (failures.length === 0) {
@@ -2252,23 +2252,23 @@ Respond with ONLY the analysis, no preamble.` }
       let analysisHtml = '';
       if (f.analysis) {
         analysisHtml = `<div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:4px;padding:6px 8px;margin-bottom:10px;font-size:10px;color:#c4b5fd;max-height:80px;overflow-y:auto;">
-          <div style="font-size:9px;color:#8b5cf6;margin-bottom:2px;">ðŸ§  Claude's self-analysis:</div>
+          <div style="font-size:9px;color:#8b5cf6;margin-bottom:2px;">🧠 Claude's self-analysis:</div>
           ${f.analysis}
         </div>`;
       } else if (f.analysisStatus === 'pending') {
         analysisHtml = `<div style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:4px;padding:6px 8px;margin-bottom:10px;font-size:10px;color:#fbbf24;">
-          â³ Claude is analyzing the misread...
+          ⏳ Claude is analyzing the misread...
         </div>`;
       } else if (f.analysisStatus === 'failed') {
         analysisHtml = `<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:4px;padding:4px 8px;margin-bottom:10px;font-size:10px;color:#f87171;">
-          âš ï¸ Analysis failed (API error)
+          ⚠️ Analysis failed (API error)
         </div>`;
       }
 
       overlay.innerHTML = `
         <div style="background:#1a1a2e;border:2px solid #d4af37;border-radius:8px;padding:20px;max-width:500px;width:90%;color:#e0e0e0;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span style="color:#d4af37;font-size:14px;font-weight:bold;">ðŸ” Failed SC Review (${currentIdx + 1}/${currentFailures.length})</span>
+            <span style="color:#d4af37;font-size:14px;font-weight:bold;">🔍 Failed SC Review (${currentIdx + 1}/${currentFailures.length})</span>
             <span style="color:#888;font-size:11px;">${timeStr}</span>
           </div>
           ${imgSrc ? `<div style="display:flex;gap:6px;margin-bottom:10px;">
@@ -2286,7 +2286,7 @@ Respond with ONLY the analysis, no preamble.` }
             <div style="flex:1;background:#2a1a1a;padding:6px 8px;border-radius:4px;">
               <div style="font-size:9px;color:#f66;">Claude answered:</div>
               <div style="font-size:16px;color:#ff8888;letter-spacing:3px;">${f.fullSolution || f.claudeAnswer}</div>
-              ${f.positions ? `<div style="font-size:9px;color:#888;">Positions ${f.positions.join(',')} â†’ "${f.claudeAnswer}"</div>` : ''}
+              ${f.positions ? `<div style="font-size:9px;color:#888;">Positions ${f.positions.join(',')} → "${f.claudeAnswer}"</div>` : ''}
             </div>
             <div style="flex:1;background:#1a2a1a;padding:6px 8px;border-radius:4px;">
               <div style="font-size:9px;color:#4ade80;">${f.corrected ? 'Correct answer:' : 'Your correction:'}</div>
@@ -2300,11 +2300,11 @@ Respond with ONLY the analysis, no preamble.` }
           ${analysisHtml}
           <div style="display:flex;gap:6px;justify-content:space-between;">
             <div style="display:flex;gap:6px;">
-              <button id="sc-review-prev" style="background:#333;border:1px solid #555;color:#ccc;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;" ${currentIdx === 0 ? 'disabled style="opacity:0.4;cursor:default;background:#333;border:1px solid #555;color:#ccc;padding:4px 12px;border-radius:4px;font-size:12px;"' : ''}>â—„ Prev</button>
-              <button id="sc-review-next" style="background:#333;border:1px solid #555;color:#ccc;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;" ${currentIdx >= currentFailures.length - 1 ? 'disabled style="opacity:0.4;cursor:default;background:#333;border:1px solid #555;color:#ccc;padding:4px 12px;border-radius:4px;font-size:12px;"' : ''}>Next â–º</button>
+              <button id="sc-review-prev" style="background:#333;border:1px solid #555;color:#ccc;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;" ${currentIdx === 0 ? 'disabled style="opacity:0.4;cursor:default;background:#333;border:1px solid #555;color:#ccc;padding:4px 12px;border-radius:4px;font-size:12px;"' : ''}>◄ Prev</button>
+              <button id="sc-review-next" style="background:#333;border:1px solid #555;color:#ccc;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;" ${currentIdx >= currentFailures.length - 1 ? 'disabled style="opacity:0.4;cursor:default;background:#333;border:1px solid #555;color:#ccc;padding:4px 12px;border-radius:4px;font-size:12px;"' : ''}>Next ►</button>
             </div>
             <div style="display:flex;gap:6px;">
-              ${!f.corrected ? '<button id="sc-review-save" style="background:rgba(74,222,128,0.2);border:1px solid #4ade80;color:#4ade80;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">âœ“ Save & Analyze</button>' : ''}
+              ${!f.corrected ? '<button id="sc-review-save" style="background:rgba(74,222,128,0.2);border:1px solid #4ade80;color:#4ade80;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">✓ Save & Analyze</button>' : ''}
               <button id="sc-review-close" style="background:rgba(212,175,55,0.2);border:1px solid #d4af37;color:#d4af37;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">Close</button>
             </div>
           </div>
@@ -2365,11 +2365,11 @@ Respond with ONLY the analysis, no preamble.` }
     corrections.slice(0, 15).forEach((c, i) => {
       let diff = '';
       for (let j = 0; j < 6; j++) {
-        if (c.claudeAnswer[j] !== c.correctAnswer[j]) diff += ` ${c.claudeAnswer[j]}â†’${c.correctAnswer[j]}`;
+        if (c.claudeAnswer[j] !== c.correctAnswer[j]) diff += ` ${c.claudeAnswer[j]}→${c.correctAnswer[j]}`;
       }
-      console.log(`  ${i + 1}. "${c.claudeAnswer}" â†’ "${c.correctAnswer}" (${diff.trim()})`);
+      console.log(`  ${i + 1}. "${c.claudeAnswer}" → "${c.correctAnswer}" (${diff.trim()})`);
     });
-    if (uncorrected > 0) console.log(`\nâ³ ${uncorrected} failed attempts awaiting review.`);
+    if (uncorrected > 0) console.log(`\n⏳ ${uncorrected} failed attempts awaiting review.`);
     return { corrections, pending: uncorrected };
   };
 
@@ -2401,18 +2401,18 @@ Respond with ONLY the analysis, no preamble.` }
           if (!data) return;
 
           if (data.error === 'botcheck_failed') {
-            console.log('[ClaudeSC-Intercept] âŒ Server confirmed FAILURE');
+            console.log('[ClaudeSC-Intercept] ❌ Server confirmed FAILURE');
             // If we have a pending auto-solve, record the failure with image
             if (lastSecurityCheckWasAuto && lastSecurityCheckTime > 0) {
               recordSecurityCheckResult(false, 'server_botcheck_failed');
             }
           } else if (data.botcheck_passed) {
-            console.log('[ClaudeSC-Intercept] âœ… Server confirmed PASS');
+            console.log('[ClaudeSC-Intercept] ✅ Server confirmed PASS');
             if (lastSecurityCheckTime > 0) {
               recordSecurityCheckResult(true, null);
             }
           } else if (data.error === 'botcheck_logout') {
-            console.log('[ClaudeSC-Intercept] ðŸš¨ Botcheck logout!');
+            console.log('[ClaudeSC-Intercept] 🚨 Botcheck logout!');
             if (lastSecurityCheckTime > 0) {
               recordSecurityCheckResult(false, 'server_botcheck_logout');
             }
@@ -3276,7 +3276,7 @@ Respond with ONLY the analysis, no preamble.` }
 
       try {
         if (window.gameNotifications && typeof window.gameNotifications.show === 'function') {
-          window.gameNotifications.show('âœ” CapSolver: Solved! (' + solution + ')');
+          window.gameNotifications.show('✔ CapSolver: Solved! (' + solution + ')');
         }
       } catch {}
 
@@ -3303,7 +3303,7 @@ Respond with ONLY the analysis, no preamble.` }
 
       try {
         if (window.gameNotifications && typeof window.gameNotifications.show === 'function') {
-          window.gameNotifications.show('âœ”' + error.message);
+          window.gameNotifications.show('✔' + error.message);
         }
       } catch {}
     } finally {
@@ -3380,7 +3380,7 @@ Respond with ONLY the analysis, no preamble.` }
     return stats;
   };
 
-  console.log('[CapSolver] âœ” Global functions created');
+  console.log('[CapSolver] ✔ Global functions created');
   console.log('[CapSolver] Usage: capSolverSetKey("CAP-xxx"), capSolverEnable(), capSolverTest()');
 
   // Function to customize CapSolver options
@@ -3460,7 +3460,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
     try { flag = localStorage.getItem(BEAST_RETURN_KEY); } catch {}
 
     if (isKingdomAutoRunning()) {
-      // Prevent combatâ†’map bouncing while Kingdom Auto is navigating.
+      // Prevent combat→map bouncing while Kingdom Auto is navigating.
       try { localStorage.removeItem(BEAST_RETURN_KEY); } catch {}
       return;
     }
@@ -3755,7 +3755,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
     const url = location.origin + path;
     if (location.href === url) return;
 
-    console.log('[OA Script] Tab hotkey', key, 'â†’', url);
+    console.log('[OA Script] Tab hotkey', key, '→', url);
     e.preventDefault();
     location.href = url;
   }
@@ -4550,11 +4550,11 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
 
       return [
         `Profile ${prof}`,
-        `Fights ${fights} Â· Attacks ${attacks}`,
-        `Pots ${pots} Â· Revives ${revives}`,
+        `Fights ${fights} · Attacks ${attacks}`,
+        `Pots ${pots} · Revives ${revives}`,
         `LB ${lbTotal} (Auto ${lbAuto}, F2 ${lbHotkey}, Btn ${lbButton})`,
         `Auto ${acStr} h`,
-        `XP/h ${xpStr} Â· Gold/h ${goldStr}`,
+        `XP/h ${xpStr} · Gold/h ${goldStr}`,
       ].join('\n');
     }
 
@@ -4748,7 +4748,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
   const fw = fill.getBoundingClientRect?.().width || 0;
   const pw = parent?.getBoundingClientRect?.().width || 0;
 
-  // Some UIs keep a 1â€“8px "stub" even when empty; treat small widths as empty.
+  // Some UIs keep a 1–8px "stub" even when empty; treat small widths as empty.
   if (fw <= 10) return true;
 
   if (pw > 0) {
@@ -5558,7 +5558,7 @@ function isOnScreenAndTop(el) {
 
       const body = document.createElement("div");
       Object.assign(body.style, { minHeight: "140px" });
-      body.textContent = "Loadingâ€¦";
+      body.textContent = "Loading…";
 
       root.append(top, body);
       stage.appendChild(root);
@@ -5652,7 +5652,7 @@ function isOnScreenAndTop(el) {
         const submitBtn = form.querySelector('button[type="submit"], button:not([type])');
         if (submitBtn) submitBtn.disabled = true;
 
-        setKingdomStatus("Submittingâ€¦");
+        setKingdomStatus("Submitting…");
 
         try {
           const body = formToUrlSearchParams(form);
@@ -5666,7 +5666,7 @@ function isOnScreenAndTop(el) {
 
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-          setKingdomStatus("Submitted âœ”");
+          setKingdomStatus("Submitted ✔");
           setTimeout(() => setKingdomStatus(""), 2200);
 
           // Refresh stats/UI after server processes
@@ -5690,8 +5690,8 @@ function isOnScreenAndTop(el) {
 
       const run = (async () => {
         try {
-          if (body) body.textContent = "Loadingâ€¦";
-          setKingdomStatus("Loadingâ€¦");
+          if (body) body.textContent = "Loading…";
+          setKingdomStatus("Loading…");
 
           const res = await fetch("/game.php?tab=kingdoms", { credentials: "include" });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7223,7 +7223,7 @@ if (beastOpt) {
       }
 
       if (isBotcheckVisible()) {
-        log("Security Check detected â€“Â pausing automation + alerting.");
+        log("Security Check detected — pausing automation + alerting.");
         copyBotcheckCodeIfAny();
         focusBotcheckInput();
 
@@ -7465,7 +7465,7 @@ function ensureCombatEngine() {
 
     const now = Date.now();
 
-    // ALWAYS respect the action gate â€“ even if dirty.
+    // ALWAYS respect the action gate – even if dirty.
     // This is what makes reaction delays / humanized pauses actually work.
     if (now < (state.nextEligibleActionAt || 0)) return;
 
@@ -7923,20 +7923,20 @@ function onAutoKey(e) {
       // Alternate between script AutoCombat and the game's built-in AutoCombat.
       if (state.enabled) {
         // Script -> Game
-        disableScriptAuto("F3â†’Game");
-        enableGameAuto("F3â†’Game");
+        disableScriptAuto("F3→Game");
+        enableGameAuto("F3→Game");
         return;
       }
 
       if (gameRunning || gameEnabled || loadGameAutoWanted()) {
         // Game -> Script
-        disableGameAuto("F3â†’Script");
-        enableScriptAuto("F3â†’Script");
+        disableGameAuto("F3→Script");
+        enableScriptAuto("F3→Script");
         return;
       }
 
       // If neither is active, start script auto by default.
-      enableScriptAuto("F3â†’Script");
+      enableScriptAuto("F3→Script");
     }
     document.addEventListener("keydown", onModeToggleKey, true);
 
@@ -8129,7 +8129,7 @@ function onAutoKey(e) {
       window.__oaPlane.tick = () => planeMgr.tick("manual");
     } catch {}
 
-    // â”€â”€ Periodic plane lock enforcement â”€â”€
+    // ── Periodic plane lock enforcement ──
     // This runs every 1.5s to actually step planes when the lock is set.
     // Without this, the plane lock only gets checked inside canStartSelectedFight()
     // which may not fire frequently enough (e.g. after beast dies and lock is restored).
@@ -8166,9 +8166,9 @@ function onAutoKey(e) {
         let chosen = null;
 
         if (dir === "up") {
-          chosen = pick("ascend") || pick("pâ†‘") || items.find(o => o.joined.includes("â†‘"));
+          chosen = pick("ascend") || pick("p↑") || items.find(o => o.joined.includes("↑"));
         } else if (dir === "down") {
-          chosen = pick("descend") || pick("pâ†“") || items.find(o => o.joined.includes("â†“"));
+          chosen = pick("descend") || pick("p↓") || items.find(o => o.joined.includes("↓"));
         } else {
           return false;
         }
@@ -8389,7 +8389,7 @@ if (e.key === "[" || e.code === "BracketLeft") handled = (typeof clickPlaneStep 
       },
     };
 
-    log("Loaded. F1: Script AutoCombat, F2: Last Beast, F3: Toggle ScriptÃ¢â€ â€Game AutoCombat, 1â€“9: tabs.");
+    log("Loaded. F1: Script AutoCombat, F2: Last Beast, F3: Toggle Script→Game AutoCombat, 1–9: tabs.");
 
     // Keep the game's built-in AutoCombat running when AutoKeep is enabled in the HUD.
 // This will turn auto ON if it's off, but never turn it OFF.
@@ -8597,7 +8597,7 @@ if (loadGameAutoForce()) startGameAutoKeepAliveLoop();
 
           const csrf = getCsrfToken();
           if (!csrf) {
-            status.textContent = "Waiting for CSRF tokenâ€¦";
+            status.textContent = "Waiting for CSRF token…";
             teleportRetryJob.attempts += 1;
             if (teleportRetryJob.attempts >= teleportRetryJob.maxAttempts) {
               status.textContent = "Teleport failed (no CSRF). Try F2 once on Map.";
@@ -8611,7 +8611,7 @@ if (loadGameAutoForce()) startGameAutoKeepAliveLoop();
 const block = getTeleportBlockReason();
 if (block.blocked && !force) {
   const s = Math.max(0.1, Math.ceil(block.remainingMs / 100) / 10);
-  status.textContent = `Waiting for action delayâ€¦ ${s}s`;
+  status.textContent = `Waiting for action delay… ${s}s`;
   return;
 }
 
@@ -8675,7 +8675,7 @@ console.log("[AutoBeast] Block check:", block);
 if (block.blocked && !force) {
   const s = Math.max(0.1, Math.ceil(block.remainingMs / 100) / 10);
   console.log("[AutoBeast] Blocked by action delay:", s, "seconds");
-  status.textContent = `Waiting for action delayâ€¦ ${s}s`;
+  status.textContent = `Waiting for action delay… ${s}s`;
   scheduleTeleportRetry({ kind: "lastbeast", source: source || "unknown", cdKey: cdKey || "", attempts: 0, maxAttempts: 80 });
   return;
 }
@@ -8683,7 +8683,7 @@ if (block.blocked && !force) {
         const csrf = getCsrfToken();
         console.log("[AutoBeast] CSRF token:", csrf ? "found" : "NOT FOUND");
         if (!csrf) {
-          status.textContent = "Waiting for CSRF tokenâ€¦";
+          status.textContent = "Waiting for CSRF token…";
           scheduleTeleportRetry({ kind: "lastbeast", source: source || "unknown", cdKey: cdKey || "", attempts: 0, maxAttempts: 40 });
           return;
         }
@@ -8726,7 +8726,7 @@ if (block.blocked && !force) {
 
         if (!form && !rideButton) {
           console.log("[AutoBeast] ERROR: No teleport form/button found on map page!");
-          status.textContent = "Waiting for Map teleport formâ€¦";
+          status.textContent = "Waiting for Map teleport form…";
           scheduleTeleportRetry({ kind: "lastbeast", source: source || "unknown", cdKey: cdKey || "", attempts: 0, maxAttempts: 80 });
           return;
         }
@@ -8736,7 +8736,7 @@ if (block.blocked && !force) {
           const nonceInput = form.querySelector('input[name="map_nonce"]');
           console.log("[AutoBeast] Nonce found:", !!nonceInput, nonceInput?.value ? "has value" : "NO VALUE");
           if (!nonceInput || !nonceInput.value) {
-            status.textContent = "Waiting for Map nonceâ€¦";
+            status.textContent = "Waiting for Map nonce…";
             scheduleTeleportRetry({ kind: "lastbeast", source: source || "unknown", cdKey: cdKey || "", attempts: 0, maxAttempts: 80 });
             return;
           }
@@ -8756,7 +8756,7 @@ if (block.blocked && !force) {
           ensureHidden("from_tab", currentTab);
         }
 
-        status.textContent = "Riding to last beastâ€¦";
+        status.textContent = "Riding to last beast…";
         uiLog("Submitting teleport_last_beast from Map tab", { from_tab: currentTab, source, cdKey });
 
         // Track inflight teleport
@@ -8806,7 +8806,7 @@ if (block.blocked && !force) {
         if (chariotCd > 0) {
           const s = Math.ceil(chariotCd / 1000);
           console.log("[AutoBeast] Chariot on cooldown:", s, "seconds remaining");
-          status.textContent = `Chariot cooldown: ${s}sâ€¦`;
+          status.textContent = `Chariot cooldown: ${s}s…`;
 
           // Schedule retry
           rcRetryJob = { source, cdKey };
@@ -8828,7 +8828,7 @@ if (block.blocked && !force) {
                 teleportViaChatCommand(job.source, job.cdKey);
               } else {
                 const secs = Math.ceil(cd / 1000);
-                status.textContent = `Chariot cooldown: ${secs}sâ€¦`;
+                status.textContent = `Chariot cooldown: ${secs}s…`;
               }
             }, 500);
           }
@@ -8839,7 +8839,7 @@ if (block.blocked && !force) {
         const cs = getCombatState();
         if (cs && cs.inCombat) {
           console.log("[AutoBeast] In combat, waiting...");
-          status.textContent = "Waiting for combat to endâ€¦";
+          status.textContent = "Waiting for combat to end…";
 
           // Schedule retry
           rcRetryJob = { source, cdKey };
@@ -8860,7 +8860,7 @@ if (block.blocked && !force) {
                 console.log("[AutoBeast] Combat ended, proceeding with /rc");
                 doTeleportViaChatCommand(job.source, job.cdKey);
               } else {
-                status.textContent = "Waiting for combat to endâ€¦";
+                status.textContent = "Waiting for combat to end…";
               }
             }, 500);
           }
@@ -8872,7 +8872,7 @@ if (block.blocked && !force) {
         if (block.blocked) {
           const s = Math.max(0.1, Math.ceil(block.remainingMs / 100) / 10);
           console.log("[AutoBeast] Blocked by action delay:", s, "seconds");
-          status.textContent = `Waiting for action delayâ€¦ ${s}s`;
+          status.textContent = `Waiting for action delay… ${s}s`;
 
           // Schedule retry
           rcRetryJob = { source, cdKey };
@@ -8886,7 +8886,7 @@ if (block.blocked && !force) {
 
               const checkCs = getCombatState();
               if (checkCs && checkCs.inCombat) {
-                status.textContent = "Waiting for combat to endâ€¦";
+                status.textContent = "Waiting for combat to end…";
                 return;
               }
 
@@ -8900,7 +8900,7 @@ if (block.blocked && !force) {
                 doTeleportViaChatCommand(job.source, job.cdKey);
               } else {
                 const secs = Math.max(0.1, Math.ceil(checkBlock.remainingMs / 100) / 10);
-                status.textContent = `Waiting for action delayâ€¦ ${secs}s`;
+                status.textContent = `Waiting for action delay… ${secs}s`;
               }
             }, 200);
           }
@@ -8915,7 +8915,7 @@ if (block.blocked && !force) {
         const csrf = window.csrfToken || getCsrfToken();
         if (!csrf) {
           console.log("[AutoBeast] No CSRF token for chat command");
-          status.textContent = "Waiting for CSRF tokenâ€¦";
+          status.textContent = "Waiting for CSRF token…";
           return false;
         }
 
@@ -8946,7 +8946,7 @@ if (block.blocked && !force) {
         formData.append('csrf_token', csrf);
 
         try {
-          status.textContent = "Sending /rc commandâ€¦";
+          status.textContent = "Sending /rc command…";
           const response = await fetch('api/chat_api.php', {
             method: 'POST',
             body: formData,
@@ -8955,7 +8955,7 @@ if (block.blocked && !force) {
 
           if (response.ok) {
             console.log("[AutoBeast] /rc command sent successfully!");
-            status.textContent = "Teleporting via /rcâ€¦";
+            status.textContent = "Teleporting via /rc…";
             lastTeleportSubmitAt = Date.now();
 
             // Store teleport time so we can detect new limit messages after page reload
@@ -9105,7 +9105,7 @@ if (block.blocked && !force) {
         const block = getTeleportBlockReason();
         if (block.blocked) {
           const s = Math.max(0.1, Math.ceil(block.remainingMs / 100) / 10);
-          status.textContent = `Waiting for action delayâ€¦ ${s}s`;
+          status.textContent = `Waiting for action delay… ${s}s`;
           scheduleTeleportRetry({ kind: "coords", x, y, source: source || "unknown", attempts: 0, maxAttempts: 80 });
           return;
         }
@@ -9117,7 +9117,7 @@ if (block.blocked && !force) {
 
         const csrf = getCsrfToken();
         if (!csrf) {
-          status.textContent = "Waiting for CSRF tokenâ€¦";
+          status.textContent = "Waiting for CSRF token…";
           scheduleTeleportRetry({ kind: "coords", x, y, source: source || "unknown", attempts: 0, maxAttempts: 40 });
           return;
         }
@@ -9132,14 +9132,14 @@ if (block.blocked && !force) {
         const actionInput = document.querySelector('form input[name="action"][value="teleport_map"]');
         const form = actionInput?.closest("form");
         if (!form) {
-          status.textContent = "Waiting for Map teleport formâ€¦";
+          status.textContent = "Waiting for Map teleport form…";
           scheduleTeleportRetry({ kind: "coords", x, y, source: source || "unknown", attempts: 0, maxAttempts: 80 });
           return;
         }
 
         const nonceInput = form.querySelector('input[name="map_nonce"]');
         if (!nonceInput || !nonceInput.value) {
-          status.textContent = "Waiting for Map nonceâ€¦";
+          status.textContent = "Waiting for Map nonce…";
           scheduleTeleportRetry({ kind: "coords", x, y, source: source || "unknown", attempts: 0, maxAttempts: 80 });
           return;
         }
@@ -9170,7 +9170,7 @@ if (block.blocked && !force) {
         ensureNumber("teleport_x", cx);
         ensureNumber("teleport_y", cy);
 
-        status.textContent = `Teleporting to (${cx}, ${cy})â€¦`;
+        status.textContent = `Teleporting to (${cx}, ${cy})…`;
         uiLog("Submitting teleport_map", { x: cx, y: cy, source });
 
         lastTeleportSubmitAt = Date.now();
@@ -9189,7 +9189,7 @@ if (block.blocked && !force) {
 
         if (currentTab !== "map") {
           try { localStorage.setItem(COORD_PENDING_KEY, JSON.stringify({ x: xx, y: yy, source: source || "unknown" })); } catch {}
-          status.textContent = "Coord teleport requires Map â€“ switching to Mapâ€¦";
+          status.textContent = "Coord teleport requires Map – switching to Map…";
           uiLog(`Coord teleport requested from tab "${currentTab}", redirecting to Map first.`, { x: xx, y: yy });
 
           const url = new URL(location.href);
@@ -9409,7 +9409,7 @@ function playSecurityBeep() {
     if (ctx.state !== "running") {
       if (!_oaAudioWarned) {
         _oaAudioWarned = true;
-        try { notify("Sound blocked by browser â€“Â click the page once to enable beeps."); } catch {}
+        try { notify("Sound blocked by browser — click the page once to enable beeps."); } catch {}
       }
       return false;
     }
@@ -9472,7 +9472,7 @@ function playSecurityBeep() {
     if (ctx.state !== "running") {
       if (!_oaAudioWarned) {
         _oaAudioWarned = true;
-        try { notify("Sound blocked by browser â€“Â click the page once to enable beeps."); } catch {}
+        try { notify("Sound blocked by browser — click the page once to enable beeps."); } catch {}
       }
       return false;
     }
@@ -9586,7 +9586,7 @@ function playSecurityBeep() {
   OA.setTimeout(() => { try { startHourlyServerChime(); } catch {} }, 1200);
 
 // ============================================================================
-// Server-time Scheduler (on-the-hour / daily) â€“Â uses #server-time chip epoch
+// Server-time Scheduler (on-the-hour / daily) — uses #server-time chip epoch
 //   - Provides a reliable "server clock" derived from data-server-epoch + client elapsed time
 //   - Includes an hourly example: "Hourly Kingdom Walk" (runs Kingdom Auto, then returns to combat)
 //   - Toggle Hourly Kingdom Walk: Alt+Shift+Click the server-time chip
@@ -9827,7 +9827,7 @@ function formatServerHHMM(localMs) {
 
 function getNextKingdomWalkRunInfo() {
   if (!Number.isFinite(baseEpochSec)) { try { readBase(); } catch {} }
-  if (!Number.isFinite(baseEpochSec)) return { nextText: "â€“Â" };
+  if (!Number.isFinite(baseEpochSec)) return { nextText: "—" };
   const cfg = getScheduleCfg();
   const nowLocal = getServerLocalMs();
   const inf = scheduleInfo(nowLocal, cfg);
@@ -10101,15 +10101,15 @@ function markScheduleFired(id, occMs) {
     if (cfg.enabled) {
       const info = getNextKingdomWalkRunInfo();
       if (info && info.nextText) {
-        suffix += ` â€¢ Next ${info.nextText}`;
+        suffix += ` • Next ${info.nextText}`;
       }
       try {
         const lf = OA.Storage.get(SCHED_DEBUG_LAST_FIRE_KEY, null);
-        if (lf && lf.occLocalMs) { suffix += ` â€¢ Last ${formatServerHHMM(lf.occLocalMs)}`; }
+        if (lf && lf.occLocalMs) { suffix += ` • Last ${formatServerHHMM(lf.occLocalMs)}`; }
       } catch {}
 
       if (cfg.everyValue && cfg.everyUnit && cfg.startHHMM) {
-        suffix += ` â€¢ ${cfg.startHHMM} then every ${cfg.everyValue} ${cfg.everyUnit}`;
+        suffix += ` • ${cfg.startHHMM} then every ${cfg.everyValue} ${cfg.everyUnit}`;
       }
     }
     el.setAttribute("title", clean + suffix);
@@ -10141,7 +10141,7 @@ function markScheduleFired(id, occMs) {
 
     el.addEventListener("click", handler, true);
     try { if (el.dataset) el.dataset.oaSchedToggleBound = "1"; } catch {}
-    // NOTE: Do not register OA.addCleanup here â€“Â AutoCombat may call OA.clearAll(), and we
+    // NOTE: Do not register OA.addCleanup here — AutoCombat may call OA.clearAll(), and we
     // want scheduler toggles + timers to survive that.
     try { updateHint(); } catch {}
     return true;
@@ -10415,7 +10415,7 @@ function tick() {
           window.__oaScheduler.getNextKingdomWalkRunInfo = function(){
             const cfg = getCfg();
             const now = getServerLocalMs();
-            if(!cfg.enabled) return { enabled:false, nowLocalMs: now, nowText: formatHHMM(now), nextText:"â€“Â", cfg };
+            if(!cfg.enabled) return { enabled:false, nowLocalMs: now, nowText: formatHHMM(now), nextText:"—", cfg };
             const inf = scheduleInfo(now, cfg);
             const catchUpMs = Math.max(5000, cfg.catchUpMins*60000);
             const windowMs = Math.min(catchUpMs, Math.max(60000, Math.floor(inf.periodMs/2)));
@@ -10526,7 +10526,7 @@ function maybeBeepSecurityCheck() {
   if (now - lastSecurityBeepAt < SECURITY_BEEP_COOLDOWN_MS) return;
   if (!isSecurityCheckLikely()) return;
   lastSecurityBeepAt = now;
-  try { uiLog("SECURITY CHECK detected â€“Â beep", {}); } catch {}
+  try { uiLog("SECURITY CHECK detected — beep", {}); } catch {}
   playSecurityBeep();
   try { notify("Security check detected!"); } catch {}
 }
@@ -10603,7 +10603,7 @@ let forceF2IgnoreDelay = loadForceF2IgnoreDelay();
         overflow: "hidden",
       });
 
-      // â”€â”€ HUD Header (matching sa-hdr style) â”€â”€
+      // ── HUD Header (matching sa-hdr style) ──
       const hudHeader = document.createElement("div");
       Object.assign(hudHeader.style, {
         display: "flex",
@@ -10631,7 +10631,7 @@ let forceF2IgnoreDelay = loadForceF2IgnoreDelay();
       hudHeader.append(hudTitleEl, hudHeaderBtns);
       wrap.appendChild(hudHeader);
 
-      // â”€â”€ Drag support (on header) â”€â”€
+      // ── Drag support (on header) ──
       let _hudDrag = false, _hudDx = 0, _hudDy = 0;
       hudHeader.onmousedown = (e) => {
         if (e.target === hudCloseBtn) return;
@@ -10640,7 +10640,7 @@ let forceF2IgnoreDelay = loadForceF2IgnoreDelay();
       document.addEventListener("mousemove", (e) => { if (_hudDrag) { wrap.style.left = (e.clientX - _hudDx) + "px"; wrap.style.top = (e.clientY - _hudDy) + "px"; wrap.style.right = "auto"; } });
       document.addEventListener("mouseup", () => { _hudDrag = false; });
 
-      // â”€â”€ HUD Body (scrollable content area) â”€â”€
+      // ── HUD Body (scrollable content area) ──
       const hudBody = document.createElement("div");
       Object.assign(hudBody.style, { overflowY: "auto", padding: "8px 10px", flex: "1" });
       wrap.appendChild(hudBody);
@@ -10914,7 +10914,7 @@ const beepLabel = document.createElement("label");
         visLabel.style.background = enabled ? "rgba(34,197,94,0.14)" : "rgba(148,163,184,0.15)";
         dlog("KeepAlive toggled", { enabled });
         if (enabled) {
-          // User gesture â†’ we can start audio reliably here.
+          // User gesture → we can start audio reliably here.
           try { startSilentAudio((m, o) => console.log(`[OA AntiPause] ${m}`, o ?? "")); } catch {}
         }
         renderReadyStatus(enabled ? "KeepAlive ON (refresh)" : "KeepAlive OFF (refresh)");
@@ -11393,9 +11393,9 @@ const beepLabel = document.createElement("label");
 
       function renderReadyStatus(extra) {
         const base = autoBeastEnabled
-          ? `Ready Â· Auto ON Â· Loc CD ${formatLocCooldownLabel()}`
-          : `Ready Â· Auto OFF Â· Loc CD ${formatLocCooldownLabel()}`;
-        status.textContent = extra ? `${extra} Â· ${base}` : base;
+          ? `Ready · Auto ON · Loc CD ${formatLocCooldownLabel()}`
+          : `Ready · Auto OFF · Loc CD ${formatLocCooldownLabel()}`;
+        status.textContent = extra ? `${extra} · ${base}` : base;
       }
 
       profileSelect.addEventListener("change", () => {
@@ -11505,7 +11505,7 @@ const beepLabel = document.createElement("label");
             dlog("Teleport arrival confirmed", { cur, target, ageMs: age });
             try { setCooldownForLocation(target, "arrived"); } catch {}
             clearInflightTeleport();
-            renderReadyStatus("Arrived Â· returning to combatâ€¦");
+            renderReadyStatus("Arrived · returning to combat…");
 
             // Return to combat after arrival confirm.
             try {
@@ -11611,12 +11611,12 @@ const beepLabel = document.createElement("label");
 
         if (String(src) === "auto" && !autoBeastEnabled) {
           uiLog("AutoBeast OFF - ignoring pending auto beast teleport.", pending);
-          status.textContent = "AutoBeast OFF Â· ignored pending auto teleport";
+          status.textContent = "AutoBeast OFF · ignored pending auto teleport";
           return;
         }
 
         uiLog("Pending Last Beast teleport found on Map tab; submitting now.", pending);
-        status.textContent = "Executing pending Last Beast teleport from Mapâ€¦";
+        status.textContent = "Executing pending Last Beast teleport from Map…";
         submitLastBeast(src, cdKey);
       })();
 
@@ -11638,7 +11638,7 @@ const beepLabel = document.createElement("label");
         const x = pending.x;
         const y = pending.y;
         uiLog("Pending coord teleport found on Map tab; submitting now.", pending);
-        status.textContent = `Executing pending coord teleport to (${x}, ${y})â€¦`;
+        status.textContent = `Executing pending coord teleport to (${x}, ${y})…`;
         submitTeleportCoords(x, y, pending.source || "pending");
       })();
 
@@ -12597,7 +12597,7 @@ secCheckbox.addEventListener('change', () => {
       };
 
       uiLog(
-        `Loaded. F1: AutoCombat, F2: Last Beast, 1â€“9: tabs, Auto Beast: ${
+        `Loaded. F1: AutoCombat, F2: Last Beast, 1–9: tabs, Auto Beast: ${
           autoBeastEnabled ? "ON" : "OFF"
         }, Alerts: observer+dedupe+pending, cooldown: 2h/location. HUD: ${embedded ? "embedded" : "floating"}.`
       );
@@ -13319,35 +13319,35 @@ secCheckbox.addEventListener('change', () => {
         let npcSection = '';
         if (kd.npcs && kd.npcs.length > 0) {
           npcSection = `
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+────────────────────────────────────────
   NPCs (${kd.npcs.length}):
     ${kd.npcs.map(npc => `🧙 ${npc}`).join('\n    ')}`;
         }
 
         console.log(`
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════
   Kingdom: ${kd.owner} @ ${plane} (${x}, ${y})
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════
   Faith: ${kd.faith}%  |  Census: ${kd.census}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════
   RESOURCES:
     Gold (Coffers): ${(kd.coffers || 0).toLocaleString()}
     Grain: ${(kd.grain || 0).toLocaleString()}
     Ambrosia: ${(kd.ambrosia || 0).toLocaleString()}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════
   ARMY (Total: ${army}):
     Footmen: ${kd.footmen || 0}
     Longbowmen: ${kd.longbowmen || 0}
     Ballistae: ${kd.ballistae || 0}
     Trebuchets: ${kd.trebuchets || 0}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════
   FORTIFICATIONS (Total: ${forts}):
     Keep: ${kd.keep_total || 0}
     Curtain: ${kd.curtain_total || 0}
     Castle: ${kd.castle_total || 0}${npcSection}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════
   Last Updated: ${new Date(kd.updatedAt).toLocaleString()}
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════
         `);
 
         return kd;
@@ -13393,23 +13393,23 @@ secCheckbox.addEventListener('change', () => {
           .map(([owner, gold]) => ({ owner, gold, kingdoms: byOwner[owner] }));
 
         console.log(`
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
   Kingdom Database Statistics
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
   Total Kingdoms: ${entries.length}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════
   TOTAL RESOURCES ACROSS ALL KINGDOMS:
-    ÃƒÂ°Ã…Â¸â€™Â° Gold:     ${totalGold.toLocaleString()}
-    ÃƒÂ°Ã…Â¸Ã…â€™Â¾ Grain:    ${totalGrain.toLocaleString()}
-    ÃƒÂ°Ã…Â¸ÂÂ· Ambrosia: ${totalAmbrosia.toLocaleString()}
-    â•Ã…Â¡â€ÃƒÂ¯Â¸Â  Army:     ${totalArmy.toLocaleString()}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    💰 Gold:     ${totalGold.toLocaleString()}
+    🌾 Grain:    ${totalGrain.toLocaleString()}
+    🍷 Ambrosia: ${totalAmbrosia.toLocaleString()}
+    ⚔️  Army:     ${totalArmy.toLocaleString()}
+════════════════════════════════════════════════════════════════
   BY PLANE:
 ${Object.entries(byPlane).map(([p, c]) => `    ${p}: ${c}`).join('\n')}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════
   TOP 10 RICHEST PLAYERS (by gold in coffers):
 ${topByGold.slice(0, 10).map((p, i) => `    ${i+1}. ${p.owner}: ${p.gold.toLocaleString()} gold (${p.kingdoms} kingdoms)`).join('\n')}
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
         `);
 
         return {
@@ -13455,20 +13455,20 @@ ${topByGold.slice(0, 10).map((p, i) => `    ${i+1}. ${p.owner}: ${p.gold.toLocal
         const ownerName = kingdoms[0].owner;
 
         console.log(`
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
   Player Wealth: ${ownerName}
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
   Kingdoms: ${kingdoms.length}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════
   TOTAL RESOURCES:
-    ÃƒÂ°Ã…Â¸â€™Â° Gold:     ${totalGold.toLocaleString()}
-    ÃƒÂ°Ã…Â¸Ã…â€™Â¾ Grain:    ${totalGrain.toLocaleString()}
-    ÃƒÂ°Ã…Â¸ÂÂ· Ambrosia: ${totalAmbrosia.toLocaleString()}
-    â•Ã…Â¡â€ÃƒÂ¯Â¸Â  Army:     ${totalArmy.toLocaleString()}
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    💰 Gold:     ${totalGold.toLocaleString()}
+    🌾 Grain:    ${totalGrain.toLocaleString()}
+    🍷 Ambrosia: ${totalAmbrosia.toLocaleString()}
+    ⚔️  Army:     ${totalArmy.toLocaleString()}
+════════════════════════════════════════════════════════════════
   KINGDOMS BY GOLD:
 ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `    ${k.plane} (${k.x},${k.y}): ${(k.coffers||0).toLocaleString()} gold`).join('\n')}
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
         `);
 
         return {
@@ -13505,9 +13505,9 @@ ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `
           .slice(0, limit);
 
         console.log(`
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
   Gold Leaderboard (Top ${limit})
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â`);
+═══════════════════════════════════════════════════════════════`);
         console.table(sorted.map((p, i) => ({
           Rank: i + 1,
           Player: p.owner,
@@ -13522,9 +13522,9 @@ ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `
       // Print help for all commands
       help: () => {
         console.log(`
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
   Kingdom Database Commands
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
 
   BASIC QUERIES:
     __kingdomDB.getAll()              - Get entire database
@@ -13580,7 +13580,7 @@ ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `
     __kingdomDB.map.hide()            - Hide overlay
     __kingdomDB.map.refresh()         - Refresh overlay
     __kingdomDB.map.setColor("owner", "rgba(...)") - Custom color
-â•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Ââ•â€¢Â
+═══════════════════════════════════════════════════════════════
         `);
       },
 
@@ -13878,7 +13878,7 @@ ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `
 
       const btn = document.createElement('button');
       btn.id = 'oa-kingdom-overlay-toggle';
-      btn.textContent = 'ÃƒÂ°Ã…Â¸â€”ÂºÃƒÂ¯Â¸Â Territory';
+      btn.textContent = '🗺️ Territory';
       btn.title = 'Toggle Kingdom Territory Overlay';
 
       const enabled = localStorage.getItem(LS_MAP_OVERLAY_ENABLED) !== 'false';
@@ -14508,10 +14508,10 @@ ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `
       popup.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <span style="font-weight:bold;color:#4ade80;font-size:15px;">${escapeHtml(kd.owner || 'Unruled')}</span>
-          <button onclick="this.parentElement.parentElement.style.display='none'" style="background:none;border:none;color:#888;cursor:pointer;font-size:18px;">Ã—</button>
+          <button onclick="this.parentElement.parentElement.style.display='none'" style="background:none;border:none;color:#888;cursor:pointer;font-size:18px;">×</button>
         </div>
         <div style="color:#888;font-size:11px;margin-bottom:12px;">
-          ${kd.plane} (${kd.x}, ${kd.y}) â€¢ Faith: ${kd.faith}% â€¢ Census: ${kd.census}
+          ${kd.plane} (${kd.x}, ${kd.y}) • Faith: ${kd.faith}% • Census: ${kd.census}
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div style="background:#0d0d15;padding:8px;border-radius:4px;">
@@ -14761,7 +14761,7 @@ ${kingdoms.sort((a,b) => (b.coffers||0) - (a.coffers||0)).slice(0,10).map(k => `
         const btn = convertForm.querySelector('button[type="submit"], button');
         if (btn) {
           dbg("converting gold to drachma", { gold: currentGold });
-          notify("Kingdom Auto: Converting 5B gold â†’â€™ 1 Drachma");
+          notify("Kingdom Auto: Converting 5B gold → 1 Drachma");
           btn.click();
           jset(LS_GOLD_CONVERT_PHASE, { phase: "submitted", startedAt: Date.now() });
           return true;
@@ -15621,8 +15621,8 @@ function submitColonize(panel, settings, st) {
             const title = String(btn?.getAttribute("title") || "").toLowerCase();
             const txt = String(btn?.textContent || "").toLowerCase();
             const joined = title + " " + txt;
-            if (joined.includes("ascend") || joined.includes("pâ†‘") || joined.includes("â†‘")) up = pid;
-            if (joined.includes("descend") || joined.includes("pâ†“") || joined.includes("â†“")) down = pid;
+            if (joined.includes("ascend") || joined.includes("p↑") || joined.includes("↑")) up = pid;
+            if (joined.includes("descend") || joined.includes("p↓") || joined.includes("↓")) down = pid;
           }
           const ui = PLANE_ORDER.indexOf(up);
           const di = PLANE_ORDER.indexOf(down);
@@ -15740,8 +15740,8 @@ const dir = (b > a) ? "up" : "down";
                 const text = String(btn?.textContent || "").toLowerCase();
                 const label = (title + " " + text);
                 const ok = (dir === "up")
-                  ? (label.includes("ascend") || label.includes("pâ†‘") || label.includes("â†‘"))
-                  : (label.includes("descend") || label.includes("pâ†“") || label.includes("â†“"));
+                  ? (label.includes("ascend") || label.includes("p↑") || label.includes("↑"))
+                  : (label.includes("descend") || label.includes("p↓") || label.includes("↓"));
                 if (ok) { __best = { f, btn, label }; break; }
               }
               if (__best && __best.btn) {
@@ -15794,7 +15794,7 @@ const dir = (b > a) ? "up" : "down";
 
           if (!__clicked) {
             __oaKAWritePlaneEnf({ mode: "pending_start", step: "plane_step_failed", dir, want, cur, tab: getTab?.() });
-            try { notify(`Kingdom Auto: can't change plane yet â€“Â no plane buttons found.`); } catch {}
+            try { notify(`Kingdom Auto: can't change plane yet — no plane buttons found.`); } catch {}
             return;
           }
 
@@ -15880,7 +15880,7 @@ if (isRunning()) return stop("Kingdom Auto: stopped.");
       }
 
 if (!Array.isArray(s.steps) || s.steps.length < 1) {
-        notify("Kingdom Auto: no steps set â€“Â will only establish kingdoms (use Settings â†’ Add Step / Capture Step).");
+        notify("Kingdom Auto: no steps set — will only establish kingdoms (use Settings → Add Step / Capture Step).");
       }
 
       try { localStorage.removeItem("oa_beast_return_to_combat_v1"); } catch {}
@@ -15958,7 +15958,7 @@ if (!Array.isArray(s.steps) || s.steps.length < 1) {
       w.innerHTML = `
         <div class="box">
           <div class="title">
-            <div>âš  Kingdom Auto</div>
+            <div>⚠ Kingdom Auto</div>
             <button id="oa-ka-settings">Settings</button>
           </div>
           <div class="meta" id="oa-ka-meta"></div>
@@ -16026,7 +16026,7 @@ if (!Array.isArray(s.steps) || s.steps.length < 1) {
 
 <div class="panel">
   <div class="ka-head">
-    <div class="ka-title">âš  Kingdom Auto Settings</div>
+    <div class="ka-title">⚠ Kingdom Auto Settings</div>
     <div class="ka-row">
       <button id="oa-ka-close" type="button">Close</button>
     </div>
@@ -16269,8 +16269,8 @@ try {
 
   function getNextRunText(sched) {
     try {
-      if (!sched.enabled) return "â€”";
-      if (!window.__oaScheduler || typeof window.__oaScheduler.getServerLocalMs !== "function") return "â€”";
+      if (!sched.enabled) return "—";
+      if (!window.__oaScheduler || typeof window.__oaScheduler.getServerLocalMs !== "function") return "—";
       const nowLocal = window.__oaScheduler.getServerLocalMs();
       const cfg = { startHHMM: sched.startHHMM || "00:00", everyValue: sched.everyValue || 1, everyUnit: sched.everyUnit || "hours" };
 
@@ -16302,7 +16302,7 @@ try {
 
       const d = new Date(nextMs);
       return String(d.getUTCHours()).padStart(2, "0") + ":" + String(d.getUTCMinutes()).padStart(2, "0");
-    } catch { return "â€”"; }
+    } catch { return "—"; }
   }
 
   function renderSchedTable() {
@@ -16429,7 +16429,7 @@ try {
       const tdDel = document.createElement("td");
       tdDel.style.padding = "8px";
       const btnDel = document.createElement("button");
-      btnDel.textContent = "â•Ã…â€œâ€¢";
+      btnDel.textContent = "✕";
       btnDel.title = "Remove schedule";
       btnDel.style.cssText = "padding:4px 8px;font-size:11px;";
       btnDel.addEventListener("click", () => {
@@ -16624,7 +16624,7 @@ try {
           const cfgNow = loadSettings();
           const wantNow = normalizePlaneName(cfgNow?.plane || "");
           const curNow = normalizePlaneName(detectPlaneLocal() || "");
-          if (planeStatus) planeStatus.textContent = `Plane (profile): ${planeTitle(wantNow) || "â€“Â"} | Current: ${planeTitle(curNow) || "?"}`;
+          if (planeStatus) planeStatus.textContent = `Plane (profile): ${planeTitle(wantNow) || "—"} | Current: ${planeTitle(curNow) || "?"}`;
         } catch {}
       };
       updatePlaneStatus();
@@ -16708,8 +16708,8 @@ try {
             console.log("[KingdomAuto] Lock Current: plane unknown on this tab; opening Map.");
             __oaRecordUIAction("lock_current_unknown_plane", { profile: String(loadSettings?.().activeProfile||"") });
 
-            setMsg("Couldn't detect plane here. Switching to Mapâ€¦ then reopen Settings.");
-            try { notify("Plane: couldn't detect current plane here â€“Â switching to Map. Open Settings again and click Lock Current."); } catch {}
+            setMsg("Couldn't detect plane here. Switching to Map… then reopen Settings.");
+            try { notify("Plane: couldn't detect current plane here — switching to Map. Open Settings again and click Lock Current."); } catch {}
             try { gotoTab("map"); } catch {}
             return;
           }
@@ -16974,7 +16974,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
 
       const meta = w.querySelector("#oa-ka-meta");
       const dbgOn = s.debug ? "DBG" : "";
-      meta.textContent = `Owner: ${s.owner || "(unset)"} | Profile: ${s.activeProfile || "Default"} | Rect: [${rect.minX},${rect.maxY}]â†’[${rect.maxX},${rect.minY}] | Steps: ${steps} | ${isRunning() ? ("RUN " + cur) : "OFF"}${dbgOn ? (" | " + dbgOn) : ""}`;
+      meta.textContent = `Owner: ${s.owner || "(unset)"} | Profile: ${s.activeProfile || "Default"} | Rect: [${rect.minX},${rect.maxY}]→[${rect.maxX},${rect.minY}] | Steps: ${steps} | ${isRunning() ? ("RUN " + cur) : "OFF"}${dbgOn ? (" | " + dbgOn) : ""}`;
 
       const btn = w.querySelector("#oa-ka-toggle");
       btn.textContent = isRunning() ? "Stop (F4)" : "Start (F4)";
@@ -17659,7 +17659,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             const info = (typeof sch.getNextKingdomWalkRunInfo === "function") ? sch.getNextKingdomWalkRunInfo() : null;
             if (info && typeof info.nowText === "string") return info.nowText;
           } catch {}
-          return "â€“Â";
+          return "—";
         };
       }
 
@@ -17669,7 +17669,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             const info = (typeof sch.getNextKingdomWalkRunInfo === "function") ? sch.getNextKingdomWalkRunInfo() : null;
             if (info && typeof info.nextText === "string") return info.nextText;
           } catch {}
-          return "â€“Â";
+          return "—";
         };
       }
     } catch {}
@@ -17688,12 +17688,12 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
     const PANEL_VIS_KEY = "oa_analyzer_vis_v3";
     const TAG = "[StatAnalyzer]";
 
-    // â”€â”€ Utility â”€â”€
+    // ── Utility ──
     function fmt(n) { return Number.isFinite(n) ? n.toLocaleString() : "0"; }
     function pct(n) { return Number.isFinite(n) ? n.toFixed(1) + "%" : "0.0%"; }
     function safeInt(s) { return parseInt(String(s).replace(/,/g, ""), 10) || 0; }
 
-    // â”€â”€ Read ALL 7 Player Stats from DOM â”€â”€
+    // ── Read ALL 7 Player Stats from DOM ──
     // Uses: <span data-stat-value="durability">1,671</span> etc.
     function readPlayerStats() {
       const result = {
@@ -17758,7 +17758,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
       return result;
     }
 
-    // â”€â”€ Combat Tracking â”€â”€
+    // ── Combat Tracking ──
     function defaults() {
       return {
         attacks: 0, hits: 0, misses: 0, crits: 0, normalHits: 0,
@@ -17776,7 +17776,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
     let isVisible = false;
     try { isVisible = localStorage.getItem(PANEL_VIS_KEY) === "1"; } catch {}
 
-    // â”€â”€ Parse Log Entry â”€â”€
+    // ── Parse Log Entry ──
     function parse(node) {
       const type = node.dataset?.logType || "";
       const text = (node.textContent || "").trim();
@@ -17834,7 +17834,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
       save(all);
     }
 
-    // â”€â”€ Metrics â”€â”€
+    // ── Metrics ──
     function metrics(s) {
       const accuracy = s.attacks > 0 ? (s.hits / s.attacks * 100) : 0;
       const critRate = s.hits > 0 ? (s.crits / s.hits * 100) : 0;
@@ -17847,7 +17847,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
       return { accuracy, critRate, avgDmg, avgCrit, avgNormal, critMult, survivalRate, avgDmgTaken };
     }
 
-    // â”€â”€ Recommendations â”€â”€
+    // ── Recommendations ──
     function recommend() {
       const stats = readPlayerStats();
       const m = metrics(sess.attacks >= 20 ? sess : all);
@@ -17858,46 +17858,46 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
 
       if (noStats || noData) return { recs: [], stats, metrics: m, total };
 
-      // CONCENTRATION â†’ Accuracy
+      // CONCENTRATION → Accuracy
       if (m.accuracy < 80) {
         recs.push({ stat: "CON (Accuracy)", prio: "CRITICAL", color: "#ef4444",
-          val: stats.con, reason: `Accuracy ${pct(m.accuracy)} â€” missing ${pct(100-m.accuracy)} of attacks!`,
+          val: stats.con, reason: `Accuracy ${pct(m.accuracy)} — missing ${pct(100-m.accuracy)} of attacks!`,
           action: `PUMP CON. Every miss = 0 damage. CON is your #1 priority until 85%+.` });
       } else if (m.accuracy < 90) {
         recs.push({ stat: "CON (Accuracy)", prio: "HIGH", color: "#f59e0b",
-          val: stats.con, reason: `Accuracy ${pct(m.accuracy)} â€” still losing ${pct(100-m.accuracy)} DPS to misses.`,
+          val: stats.con, reason: `Accuracy ${pct(m.accuracy)} — still losing ${pct(100-m.accuracy)} DPS to misses.`,
           action: `More CON. Target 90%+ for reliable damage output.` });
       } else if (m.accuracy < 96) {
         recs.push({ stat: "CON (Accuracy)", prio: "MEDIUM", color: "#3b82f6",
-          val: stats.con, reason: `Accuracy ${pct(m.accuracy)} â€” solid. Marginal gains from more CON.`,
+          val: stats.con, reason: `Accuracy ${pct(m.accuracy)} — solid. Marginal gains from more CON.`,
           action: `CON is fine. Consider INT/PER instead for bigger gains.` });
       } else {
         recs.push({ stat: "CON (Accuracy)", prio: "LOW", color: "#22c55e",
-          val: stats.con, reason: `Accuracy ${pct(m.accuracy)} â€” excellent! No more CON needed.`,
+          val: stats.con, reason: `Accuracy ${pct(m.accuracy)} — excellent! No more CON needed.`,
           action: `Stop adding CON. You almost never miss.` });
       }
 
-      // PERCEPTION â†’ Crit
+      // PERCEPTION → Crit
       if (m.critRate < 10) {
         recs.push({ stat: "PER (Crit)", prio: "HIGH", color: "#f59e0b",
-          val: stats.per, reason: `Crit rate ${pct(m.critRate)} â€” ARCANE RUSH barely triggers.`,
+          val: stats.per, reason: `Crit rate ${pct(m.critRate)} — ARCANE RUSH barely triggers.`,
           action: `Add PER. Crits do ${m.critMult > 0 ? m.critMult.toFixed(1)+"x" : "?"} normal. Each crit = ${fmt(m.avgCrit)} vs ${fmt(m.avgNormal)}.` });
       } else if (m.critRate < 25) {
         recs.push({ stat: "PER (Crit)", prio: "MEDIUM", color: "#3b82f6",
-          val: stats.per, reason: `Crit rate ${pct(m.critRate)} â€” decent. Crits avg ${fmt(m.avgCrit)} dmg.`,
+          val: stats.per, reason: `Crit rate ${pct(m.critRate)} — decent. Crits avg ${fmt(m.avgCrit)} dmg.`,
           action: `More PER = more ARCANE RUSH procs. Good balanced investment.` });
       } else {
         recs.push({ stat: "PER (Crit)", prio: "LOW", color: "#22c55e",
-          val: stats.per, reason: `Crit rate ${pct(m.critRate)} â€” strong! Crits happen often.`,
+          val: stats.per, reason: `Crit rate ${pct(m.critRate)} — strong! Crits happen often.`,
           action: `PER is in a good spot. Focus INT for bigger hit numbers.` });
       }
 
-      // INTELLIGENCE â†’ Damage
+      // INTELLIGENCE → Damage
       const effDmg = m.avgDmg * (m.accuracy / 100);
       if (m.accuracy >= 85 && m.critRate >= 15) {
         recs.push({ stat: "INT (Damage)", prio: "HIGH", color: "#f59e0b",
           val: stats.int, reason: `Acc ${pct(m.accuracy)} + Crit ${pct(m.critRate)} = solid foundation. INT = ${fmt(stats.int)}.`,
-          action: `PUMP INT. Your hits land and crit â€” bigger base damage amplifies everything. Effective DPS/hit: ${fmt(Math.round(effDmg))}.` });
+          action: `PUMP INT. Your hits land and crit — bigger base damage amplifies everything. Effective DPS/hit: ${fmt(Math.round(effDmg))}.` });
       } else if (m.accuracy >= 80) {
         recs.push({ stat: "INT (Damage)", prio: "MEDIUM", color: "#3b82f6",
           val: stats.int, reason: `Avg hit: ${fmt(m.avgDmg)}. INT = ${fmt(stats.int)}. But accuracy/crit could be better.`,
@@ -17908,10 +17908,10 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           action: `Fix CON first. INT won't help if hits don't land.` });
       }
 
-      // DURABILITY â†’ Survivability
+      // DURABILITY → Survivability
       if (m.survivalRate < 85) {
         recs.push({ stat: "DUR (HP/Defense)", prio: "HIGH", color: "#f59e0b",
-          val: stats.dur, reason: `Survival rate ${pct(m.survivalRate)} â€” dying too much! MaxHP: ${fmt(stats.maxHp)}.`,
+          val: stats.dur, reason: `Survival rate ${pct(m.survivalRate)} — dying too much! MaxHP: ${fmt(stats.maxHp)}.`,
           action: `Add DUR. Deaths = lost combat time. More HP + damage reduction.` });
       } else if (m.survivalRate < 95) {
         recs.push({ stat: "DUR (HP/Defense)", prio: "MEDIUM", color: "#3b82f6",
@@ -17919,11 +17919,11 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           action: `A few DUR points could help. Dying occasionally costs DPS time.` });
       } else {
         recs.push({ stat: "DUR (HP/Defense)", prio: "LOW", color: "#22c55e",
-          val: stats.dur, reason: `Survival ${pct(m.survivalRate)} â€” tanky! Rarely dying.`,
+          val: stats.dur, reason: `Survival ${pct(m.survivalRate)} — tanky! Rarely dying.`,
           action: `DUR is fine. Focus on DPS stats.` });
       }
 
-      // STR / DEX / AGI â€” we know less about these but show them
+      // STR / DEX / AGI — we know less about these but show them
       recs.push({ stat: "STR/DEX/AGI", prio: "INFO", color: "#94a3b8",
         val: stats.str + stats.dex + stats.agi,
         reason: `STR: ${fmt(stats.str)} | DEX: ${fmt(stats.dex)} | AGI: ${fmt(stats.agi)}`,
@@ -17934,7 +17934,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
       return { recs, stats, metrics: m, total };
     }
 
-    // â”€â”€ Claude AI Analysis â”€â”€
+    // ── Claude AI Analysis ──
     async function aiAnalyze() {
       const key = localStorage.getItem(AI_KEY);
       if (!key) return { error: "No API key. Run: setAIApiKey('sk-ant-...')" };
@@ -17947,18 +17947,18 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
       const prompt = `You are an expert advisor for the browser RPG "Olympus Awakened". Analyze this player's stats and combat performance. Give specific, actionable advice.
 
 PLAYER STATS (Level ${stats.level}):
-- Durability (DUR): ${stats.dur} â†’ HP pool (${stats.maxHp} max HP) and damage reduction
-- Strength (STR): ${stats.str} â†’ Physical damage
-- Dexterity (DEX): ${stats.dex} â†’ Ranged/dodge
-- Concentration (CON): ${stats.con} â†’ Accuracy (hit chance)
-- Agility (AGI): ${stats.agi} â†’ Speed/evasion
-- Intelligence (INT): ${stats.int} â†’ Spell/magic damage
-- Perception (PER): ${stats.per} â†’ Critical hit chance
+- Durability (DUR): ${stats.dur} → HP pool (${stats.maxHp} max HP) and damage reduction
+- Strength (STR): ${stats.str} → Physical damage
+- Dexterity (DEX): ${stats.dex} → Ranged/dodge
+- Concentration (CON): ${stats.con} → Accuracy (hit chance)
+- Agility (AGI): ${stats.agi} → Speed/evasion
+- Intelligence (INT): ${stats.int} → Spell/magic damage
+- Perception (PER): ${stats.per} → Critical hit chance
 Total: ${total} points | Available: ${stats.statPoints} unspent
 
 COMBAT PERFORMANCE (All-time / ${all.attacks} attacks):
 - Accuracy: ${m.accuracy.toFixed(1)}% (${all.hits} hits / ${all.misses} misses)
-- Crit Rate: ${m.critRate.toFixed(1)}% (${all.crits} crits / ${all.hits} hits) â€” triggers ARCANE RUSH
+- Crit Rate: ${m.critRate.toFixed(1)}% (${all.crits} crits / ${all.hits} hits) — triggers ARCANE RUSH
 - Avg Damage: ${m.avgDmg} | Avg Crit: ${m.avgCrit} | Avg Normal: ${m.avgNormal}
 - Crit Multiplier: ${m.critMult > 0 ? m.critMult.toFixed(2) + "x" : "N/A"}
 - Kills: ${all.kills} | Deaths: ${all.deaths} | Survival: ${m.survivalRate.toFixed(1)}%
@@ -18241,7 +18241,7 @@ Read the image and respond with exactly those two lines.`;
       return null; // use full solution
     }
 
-    // Hook into the SC solving flow â€” intercept botcheck modal
+    // Hook into the SC solving flow — intercept botcheck modal
     function getSolverChoice() {
       try { return localStorage.getItem(SOLVER_KEY) || "capsolver"; } catch { return "capsolver"; }
     }
@@ -18465,14 +18465,14 @@ Read the image and respond with exactly those two lines.`;
         input.dispatchEvent(new Event('change', { bubbles: true }));
         input.setAttribute('value', finalAnswer);
 
-        // (Claude solver handles its own result detection â€” no recordSecurityCheckAttempt needed)
+        // (Claude solver handles its own result detection — no recordSecurityCheckAttempt needed)
         const submitTimestamp = Date.now();
 
         // ===== PRE-SUBMISSION CHECKS =====
         // Verify the modal is still open and timer hasn't expired during our solve
         const modalStillOpen = modal.classList.contains('flex') && !modal.classList.contains('hidden');
         if (!modalStillOpen || scNotificationFailDetected) {
-          console.log(`[ClaudeSC] âš ï¸ Cannot submit â€” ${scNotificationFailDetected ? 'failure notification detected: ' + scNotificationFailText : 'modal closed (timer expired)'}`);
+          console.log(`[ClaudeSC] ⚠️ Cannot submit — ${scNotificationFailDetected ? 'failure notification detected: ' + scNotificationFailText : 'modal closed (timer expired)'}`);
           // Record as failure with saved images
           const scStats = loadCapSolverStats();
           scStats.rejected = (scStats.rejected || 0) + 1;
@@ -18483,7 +18483,7 @@ Read the image and respond with exactly those two lines.`;
           try {
             saveFailedSCAttempt(lastSCImageBase64, lastSCImageRawBase64, lastSCModalText, finalAnswer, lastSCFullSolution, lastSCPositions);
           } catch (e) { console.warn('[ClaudeSC] Could not save failed image:', e.message); }
-          try { window.gameNotifications?.show?.('\u274C Claude SC: Timer expired during solve â€” saved for review'); } catch {}
+          try { window.gameNotifications?.show?.('\u274C Claude SC: Timer expired during solve — saved for review'); } catch {}
           lastSCImageBase64 = ''; lastSCImageRawBase64 = ''; lastSCModalText = ''; lastSCFullSolution = ''; lastSCPositions = null;
           scNotificationFailDetected = false; scNotificationFailText = '';
           claudeSolveInProgress = false;
@@ -18517,46 +18517,46 @@ Read the image and respond with exactly those two lines.`;
           // Check 0 (HIGHEST PRIORITY): Notification interceptor caught a failure message
           if (scNotificationFailDetected) {
             detected = 'fail';
-            console.log("[ClaudeSC-Detect] Notification interceptor: " + scNotificationFailText + " â†’ FAIL");
+            console.log("[ClaudeSC-Detect] Notification interceptor: " + scNotificationFailText + " → FAIL");
             break;
           }
 
-          // Check 1: Error element visible with text â†’ FAIL (wrong answer)
+          // Check 1: Error element visible with text → FAIL (wrong answer)
           if (errorEl) {
             const errText = (errorEl.textContent || '').trim();
             const errVisible = !errorEl.classList.contains('hidden') && errText.length > 0;
             if (errVisible) {
               detected = 'fail';
-              console.log("[ClaudeSC-Detect] Error element visible:", errText, "â†’ FAIL");
+              console.log("[ClaudeSC-Detect] Error element visible:", errText, "→ FAIL");
               break;
             }
           }
 
-          // Check 2: Notification toast says "failed" or "security check" â†’ FAIL (timeout or rejection)
+          // Check 2: Notification toast says "failed" or "security check" → FAIL (timeout or rejection)
           if (toastEl && toastTextEl && !toastEl.classList.contains('hidden')) {
             const toastText = (toastTextEl.textContent || '').toLowerCase();
             if (toastText.includes('fail') || (toastText.includes('security check') && !toastText.includes('passed')) || toastText.includes('incorrect') || toastText.includes('wrong')) {
               detected = 'fail';
-              console.log("[ClaudeSC-Detect] Toast notification:", toastTextEl.textContent, "â†’ FAIL");
+              console.log("[ClaudeSC-Detect] Toast notification:", toastTextEl.textContent, "→ FAIL");
               break;
             }
           }
 
-          // Check 3: Captcha image src changed (new captcha loaded after rejection) â†’ FAIL
+          // Check 3: Captcha image src changed (new captcha loaded after rejection) → FAIL
           if (captchaImgEl && captchaImgSrcBefore) {
             const currentSrc = captchaImgEl.src || '';
             if (currentSrc && currentSrc !== captchaImgSrcBefore) {
               detected = 'fail';
-              console.log("[ClaudeSC-Detect] Captcha image changed â†’ FAIL (new captcha loaded)");
+              console.log("[ClaudeSC-Detect] Captcha image changed → FAIL (new captcha loaded)");
               break;
             }
           }
 
-          // Check 4: Modal closed â†’ PASS (only if no failure signals above)
+          // Check 4: Modal closed → PASS (only if no failure signals above)
           const modalVisible = modal.classList.contains('flex') && !modal.classList.contains('hidden');
           if (!modalVisible) {
             detected = 'pass';
-            console.log("[ClaudeSC-Detect] Modal closed â†’ PASS");
+            console.log("[ClaudeSC-Detect] Modal closed → PASS");
             break;
           }
         }
@@ -18564,7 +18564,7 @@ Read the image and respond with exactly those two lines.`;
         // If polling timed out, assume fail
         if (!detected) {
           detected = 'fail';
-          console.log("[ClaudeSC-Detect] Poll timed out after " + POLL_TIMEOUT + "ms â†’ assuming FAIL");
+          console.log("[ClaudeSC-Detect] Poll timed out after " + POLL_TIMEOUT + "ms → assuming FAIL");
         }
 
         // Record the result directly
@@ -18581,7 +18581,7 @@ Read the image and respond with exactly those two lines.`;
           scStats.history.unshift({ answer: finalAnswer, passed: true, auto: true, time: timeTaken, at: Date.now() });
           if (scStats.history.length > 20) scStats.history.length = 20;
           saveCapSolverStats(scStats);
-          console.log("[ClaudeSC] âœ… PASSED!", finalAnswer);
+          console.log("[ClaudeSC] ✅ PASSED!", finalAnswer);
           try { window.gameNotifications?.show?.('\u2714 Claude SC: PASSED! (' + solution + (positions ? ' \u2192 ' + finalAnswer : '') + ')'); } catch {}
         } else {
           scStats.rejected = (scStats.rejected || 0) + 1;
@@ -18589,7 +18589,7 @@ Read the image and respond with exactly those two lines.`;
           scStats.history.unshift({ answer: finalAnswer, passed: false, auto: true, time: timeTaken, at: Date.now() });
           if (scStats.history.length > 20) scStats.history.length = 20;
           saveCapSolverStats(scStats);
-          console.log("[ClaudeSC] âŒ FAILED!", finalAnswer);
+          console.log("[ClaudeSC] ❌ FAILED!", finalAnswer);
           // Save failed attempt with image for human review
           try {
             saveFailedSCAttempt(
@@ -18597,7 +18597,7 @@ Read the image and respond with exactly those two lines.`;
               finalAnswer, lastSCFullSolution, lastSCPositions
             );
           } catch (e) { console.warn('[ClaudeSC] Could not save failed image:', e.message); }
-          try { window.gameNotifications?.show?.('\u274C Claude SC: FAILED (' + finalAnswer + ') â€” saved for review'); } catch {}
+          try { window.gameNotifications?.show?.('\u274C Claude SC: FAILED (' + finalAnswer + ') — saved for review'); } catch {}
         }
 
         // Reset temp vars
@@ -18624,7 +18624,7 @@ Read the image and respond with exactly those two lines.`;
       if (getSolverChoice() === "claude") autoSolveWithClaude();
     }, 2000);
 
-    // â”€â”€ UI Panel â”€â”€
+    // ── UI Panel ──
     function createPanel() {
       if (panel) return;
       panel = document.createElement("div");
@@ -18696,7 +18696,7 @@ Read the image and respond with exactly those two lines.`;
       };
       document.getElementById("sa3-scan").onclick = async () => {
         const btn = document.getElementById("sa3-scan");
-        if (!confirm("Deep Scan v2 â€” 3-pass analysis:\nâ€¢ Pass 1: Combat mechanics (~$0.10)\nâ€¢ Pass 2: Game systems (~$0.10)\nâ€¢ Pass 3: Script improvements (~$0.10)\n\nTotal: ~$0.30. Takes 2-3 minutes.\nResults cache â€” won't re-run completed passes.\n\nContinue?")) return;
+        if (!confirm("Deep Scan v2 — 3-pass analysis:\n• Pass 1: Combat mechanics (~$0.10)\n• Pass 2: Game systems (~$0.10)\n• Pass 3: Script improvements (~$0.10)\n\nTotal: ~$0.30. Takes 2-3 minutes.\nResults cache — won't re-run completed passes.\n\nContinue?")) return;
         btn.textContent = "\u23F3";
         btn.disabled = true;
         let aiBox = document.getElementById("sa3-ai-box");
@@ -18714,7 +18714,7 @@ Read the image and respond with exactly those two lines.`;
           if (results.error) {
             aiBox.textContent = "Error: " + results.error;
           } else {
-            aiBox.textContent = "â•â•â• PASS 1: Combat Mechanics â•â•â•\n" + (results.pass1?.text || "(cached)").substring(0, 2000) + "\n\nâ•â•â• PASS 2: Game Systems â•â•â•\n" + (results.pass2?.text || "(cached)").substring(0, 2000) + "\n\nâ•â•â• PASS 3: Script Improvements â•â•â•\n" + (results.pass3?.text || "(cached)");
+            aiBox.textContent = "═══ PASS 1: Combat Mechanics ═══\n" + (results.pass1?.text || "(cached)").substring(0, 2000) + "\n\n═══ PASS 2: Game Systems ═══\n" + (results.pass2?.text || "(cached)").substring(0, 2000) + "\n\n═══ PASS 3: Script Improvements ═══\n" + (results.pass3?.text || "(cached)");
           }
         } catch (e) {
           aiBox.textContent = "Scan error: " + e.message;
@@ -18741,7 +18741,7 @@ Read the image and respond with exactly those two lines.`;
 
       let html = "";
 
-      // â”€â”€ Stats Section â”€â”€
+      // ── Stats Section ──
       html += `<div class="sa-sect"><div class="sa-sect-title">Your Stats (Lv.${stats.level})${stats.statPoints > 0 ? ` \u2014 <span style="color:#4ade80;font-weight:700">${stats.statPoints} pts!</span>` : ""}</div>`;
       if (noStats) {
         html += `<div style="color:#f59e0b;font-size:10px;">\u26A0 Can't read stats. Make sure you're on the combat page.</div>`;
@@ -18765,7 +18765,7 @@ Read the image and respond with exactly those two lines.`;
       }
       html += `</div>`;
 
-      // â”€â”€ Performance Section â”€â”€
+      // ── Performance Section ──
       html += `<div class="sa-sect"><div class="sa-sect-title">Combat Performance (${fmt(all.attacks)} attacks)</div>`;
       if (noData) {
         html += `<div style="color:#94a3b8;">Fight some monsters to collect data!</div>`;
@@ -18958,7 +18958,7 @@ Read the image and respond with exactly those two lines.`;
       }
       html += `</div>`;
 
-      // â”€â”€ Recommendations â”€â”€
+      // ── Recommendations ──
       if (recs.length > 0) {
         html += `<div class="sa-sect"><div class="sa-sect-title">\uD83D\uDCCA Recommendations</div>`;
         for (const r of recs) {
@@ -18975,7 +18975,7 @@ Read the image and respond with exactly those two lines.`;
         html += `</div>`;
       }
 
-      // â”€â”€ SC Solver Selection â”€â”€
+      // ── SC Solver Selection ──
       const choice = getSolverChoice();
       html += `<div class="sa-sect"><div class="sa-sect-title">\uD83D\uDD12 Security Check Solver</div>`;
       html += `<div style="display:flex;gap:3px;margin-top:2px;">`;
@@ -19013,7 +19013,7 @@ Read the image and respond with exactly those two lines.`;
           keyHint = "\u26A0 Need Claude key: setAIApiKey('sk-ant-...')";
         }
         html += `<div style="font-size:10px;color:${hasRequiredKey?"#4ade80":"#f59e0b"};margin-top:3px;">${hasRequiredKey ? costInfo : keyHint}</div>`;
-        // Review failed SC button â€” always shown when Claude active
+        // Review failed SC button — always shown when Claude active
         const failedImgs = (typeof loadFailedSCImages === 'function') ? loadFailedSCImages() : [];
         const failedCount = failedImgs.length;
         const uncorrectedCount = failedImgs.filter(f => !f.corrected).length;
@@ -19108,7 +19108,7 @@ Read the image and respond with exactly those two lines.`;
       }
     }
 
-    // â”€â”€ Toggle Button â”€â”€
+    // ── Toggle Button ──
     function createToggle() {
       const btn = document.createElement("button");
       btn.id = "sa3-toggle";
@@ -19255,14 +19255,14 @@ Read the image and respond with exactly those two lines.`;
 
     setTimeout(createAutoCombatButton, 600);
 
-    // â”€â”€ Hotkey F4 â”€â”€
+    // ── Hotkey F4 ──
     document.addEventListener("keydown", e => {
       if (e.key === "F4" && !(e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) {
         e.preventDefault(); togglePanel();
       }
     });
 
-    // â”€â”€ Combat Log Monitor â”€â”€
+    // ── Combat Log Monitor ──
     function startMonitor() {
       const log = document.getElementById("combat-log");
       if (!log) { setTimeout(startMonitor, 2000); return; }
@@ -19281,7 +19281,7 @@ Read the image and respond with exactly those two lines.`;
       console.log(TAG, "Combat log monitor started");
     }
 
-    // â”€â”€ Expose Console API â”€â”€
+    // ── Expose Console API ──
     _w.setAIApiKey = function(key) {
       localStorage.setItem(AI_KEY, key);
       console.log(TAG, "API key saved! Used for AI analysis + Claude SC solver.");
@@ -19297,16 +19297,16 @@ Read the image and respond with exactly those two lines.`;
     _w.statAnalyzer = function() { return recommend(); };
     _w.statAnalyzerReset = function() { all = defaults(); sess = defaults(); save(all); console.log(TAG, "Reset."); };
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // â”€â”€ DEEP SCAN v2: Multi-Pass Analysis System â”€â”€
+    // ═══════════════════════════════════════════════════════════════════
+    // ── DEEP SCAN v2: Multi-Pass Analysis System ──
     // Pass 1: Combat mechanics (combat.js + state)
     // Pass 2: Game systems (header, stats, quests, kingdoms, map)
     // Pass 3: Script improvement recommendations (userscript + pass 1&2 findings)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═══════════════════════════════════════════════════════════════════
     const SCAN_KEY = "oa_deep_scan_v2";
     const SCAN_TAG = "[DeepScan]";
 
-    // â”€â”€ Helpers â”€â”€
+    // ── Helpers ──
     async function fetchJSSource(url) {
       try {
         const res = await fetch(url, { credentials: 'same-origin' });
@@ -19337,7 +19337,7 @@ Read the image and respond with exactly those two lines.`;
       return results;
     }
 
-    // â”€â”€ DOM/State scraping (shared across passes) â”€â”€
+    // ── DOM/State scraping (shared across passes) ──
     function scrapeMonsterSelect() {
       const sel = document.getElementById('monster-select');
       if (!sel) return [];
@@ -19386,7 +19386,7 @@ Read the image and respond with exactly those two lines.`;
       return apis;
     }
 
-    // â”€â”€ Relevant localStorage â”€â”€
+    // ── Relevant localStorage ──
     function scrapeLocalStorage() {
       const data = {};
       try {
@@ -19401,7 +19401,7 @@ Read the image and respond with exactly those two lines.`;
       return data;
     }
 
-    // â”€â”€ Claude API call helper â”€â”€
+    // ── Claude API call helper ──
     async function claudeCall(prompt, maxTokens = 8000) {
       const key = localStorage.getItem(AI_KEY);
       if (!key) throw new Error("No API key. Run: localStorage.setItem('oa_ai_api_key_v1','sk-ant-...')");
@@ -19415,11 +19415,11 @@ Read the image and respond with exactly those two lines.`;
       return { text: data.content?.[0]?.text || '', usage: data.usage || {} };
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════
     // PASS 1: Combat Mechanics Deep Dive
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════
     async function scanPass1() {
-      console.log(SCAN_TAG, "â•â•â• PASS 1/3: Combat Mechanics â•â•â•");
+      console.log(SCAN_TAG, "═══ PASS 1/3: Combat Mechanics ═══");
       console.log(SCAN_TAG, "Fetching combat.js...");
 
       // Fetch combat.js
@@ -19450,12 +19450,12 @@ Read the image and respond with exactly those two lines.`;
       const apis = await fetchAPIs();
       const ls = scrapeLocalStorage();
 
-      const prompt = `You are a reverse-engineer analyzing the browser RPG "Olympus Awakened". This is PASS 1 of 3 â€” focus ONLY on combat mechanics.
+      const prompt = `You are a reverse-engineer analyzing the browser RPG "Olympus Awakened". This is PASS 1 of 3 — focus ONLY on combat mechanics.
 
-I'm giving you the COMPLETE combat.js source code, stat allocation code, live game state, and API responses. Analyze the code deeply â€” trace through functions, find formulas, map data flows.
+I'm giving you the COMPLETE combat.js source code, stat allocation code, live game state, and API responses. Analyze the code deeply — trace through functions, find formulas, map data flows.
 
 CRITICAL TASKS:
-1. STAT MECHANICS â€” What does EACH stat actually do? Trace through the code:
+1. STAT MECHANICS — What does EACH stat actually do? Trace through the code:
    - Durability (DUR): ${gameState.playerStats.dur}
    - Strength (STR): ${gameState.playerStats.str}
    - Dexterity (DEX): ${gameState.playerStats.dex}
@@ -19465,28 +19465,28 @@ CRITICAL TASKS:
    - Perception (PER): ${gameState.playerStats.per}
    Are damage/accuracy/crit formulas visible in client code or is it all server-side?
 
-2. COMBAT FLOW â€” Trace the exact sequence:
+2. COMBAT FLOW — Trace the exact sequence:
    - How does sendAction('fight') / sendAction('start_fight') work?
    - What does the server response (applyResponse) contain? Every field.
    - How do combat logs get parsed? What log types exist?
    - What is the exact cooldown/delay system? How is actionDelayMs used?
 
-3. MONSTER SYSTEM â€” From the select dropdown and combat config:
+3. MONSTER SYSTEM — From the select dropdown and combat config:
    - How are monsters structured? (id, level, abilities)
    - How do beast options differ from regular monsters?
    - What determines XP/gold rewards? (level difference? monster type?)
-   - Monster abilities â€” how do they work mechanically?
+   - Monster abilities — how do they work mechanically?
 
-4. AUTO-COMBAT SYSTEM â€” How does the built-in auto-combat work?
+4. AUTO-COMBAT SYSTEM — How does the built-in auto-combat work?
    - Start/stop conditions
    - Daily limits system
    - Death handling
    - How does it pick targets?
 
-5. BOTCHECK SYSTEM â€” Full flow:
+5. BOTCHECK SYSTEM — Full flow:
    - When does it trigger?
    - Token system, expiry, image refresh
-   - 4-digit vs 6-digit â€” what does the code say?
+   - 4-digit vs 6-digit — what does the code say?
    - Pass/fail handling
 
 AVAILABLE MONSTERS RIGHT NOW:
@@ -19524,11 +19524,11 @@ Be EXTREMELY specific. Reference function names, line patterns, variable names. 
       return result;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════
     // PASS 2: Game Systems & APIs
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════
     async function scanPass2(pass1Results) {
-      console.log(SCAN_TAG, "â•â•â• PASS 2/3: Game Systems & APIs â•â•â•");
+      console.log(SCAN_TAG, "═══ PASS 2/3: Game Systems & APIs ═══");
 
       const urls = getGameScriptURLs();
       const jsFiles = {};
@@ -19546,46 +19546,46 @@ Be EXTREMELY specific. Reference function names, line patterns, variable names. 
 
       const apis = await fetchAPIs();
 
-      const prompt = `You are a reverse-engineer analyzing the browser RPG "Olympus Awakened". This is PASS 2 of 3 â€” focus on ALL game systems EXCEPT combat (already analyzed).
+      const prompt = `You are a reverse-engineer analyzing the browser RPG "Olympus Awakened". This is PASS 2 of 3 — focus on ALL game systems EXCEPT combat (already analyzed).
 
 FINDINGS FROM PASS 1 (Combat):
 ${pass1Results.text.substring(0, 3000)}
 [...pass 1 truncated for space...]
 
 CRITICAL TASKS:
-1. HEADER/HUD SYSTEM â€” What data flows through the HUD?
+1. HEADER/HUD SYSTEM — What data flows through the HUD?
    - How does hud_state.php get polled and applied?
    - What events trigger HUD updates?
-   - XP/Gold tracking â€” how are rates calculated?
+   - XP/Gold tracking — how are rates calculated?
    - Event badges (XP boost, gold boost)
 
-2. STAT ALLOCATION API â€” How do you allocate stats programmatically?
+2. STAT ALLOCATION API — How do you allocate stats programmatically?
    - What endpoint? What parameters?
    - Is there validation? Rate limiting?
    - Can we auto-allocate via API?
 
-3. MAP/MOVEMENT SYSTEM â€” How does movement work?
+3. MAP/MOVEMENT SYSTEM — How does movement work?
    - api/map_move.php parameters
    - Plane transitions
    - How coordinates map to monster availability
 
-4. QUEST SYSTEM â€” Full quest API:
+4. QUEST SYSTEM — Full quest API:
    - How to list available quests
    - How to accept/complete quests
    - Quest requirements and rewards
    - Auto-completion possibilities
 
-5. KINGDOM SYSTEM â€” Automation opportunities:
+5. KINGDOM SYSTEM — Automation opportunities:
    - Kingdom status API
    - Auto-walk scheduling
    - Resource management
 
-6. CHAT SYSTEM â€” What data comes through chat?
+6. CHAT SYSTEM — What data comes through chat?
    - Chat API structure
    - /rc commands for teleportation
    - Beast spawn announcements
 
-7. ALL API ENDPOINTS â€” Map every endpoint with:
+7. ALL API ENDPOINTS — Map every endpoint with:
    - URL, method, parameters
    - Response structure
    - CSRF token requirements
@@ -19610,13 +19610,13 @@ Be EXTREMELY specific. Reference function names, endpoints, parameters. This wil
       return result;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════
     // PASS 3: Script Improvement Plan
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════
     async function scanPass3(pass1Results, pass2Results) {
-      console.log(SCAN_TAG, "â•â•â• PASS 3/3: Script Improvements â•â•â•");
+      console.log(SCAN_TAG, "═══ PASS 3/3: Script Improvements ═══");
 
-      // Get the userscript itself â€” just the key sections
+      // Get the userscript itself — just the key sections
       const urls = getGameScriptURLs();
       let userscriptCode = '';
       for (const url of urls) {
@@ -19629,17 +19629,17 @@ Be EXTREMELY specific. Reference function names, endpoints, parameters. This wil
       // If we couldn't fetch the userscript from a script tag, describe what we have
       const scriptFeatures = `
 CURRENT USERSCRIPT FEATURES (v6.9.16.174):
-- Auto-combat (F1 toggle) â€” clicks attack button on cooldown
-- Beast teleport (F2) â€” uses /rc chat to teleport to beasts
-- CapSolver captcha solving â€” ImageToText with preprocessing, 3-vote system
-- Claude AI captcha solving â€” Haiku 4.5 vision, 2-vote system
-- Combat stat analyzer panel (F4) â€” tracks hits/misses/crits/kills/deaths
-- Stat display â€” reads all 7 stats from DOM [data-stat-value]
-- Stat recommendations â€” cross-references stats with combat performance
-- AI analysis button â€” sends stats+metrics to Claude Sonnet for advice
-- Deep scan system â€” scrapes all JS/DOM/state for analysis (this scan)
-- Kingdom auto-walk â€” scheduled kingdom management
-- Gold-to-drachma auto-conversion â€” converts at cap (5B)
+- Auto-combat (F1 toggle) — clicks attack button on cooldown
+- Beast teleport (F2) — uses /rc chat to teleport to beasts
+- CapSolver captcha solving — ImageToText with preprocessing, 3-vote system
+- Claude AI captcha solving — Haiku 4.5 vision, 2-vote system
+- Combat stat analyzer panel (F4) — tracks hits/misses/crits/kills/deaths
+- Stat display — reads all 7 stats from DOM [data-stat-value]
+- Stat recommendations — cross-references stats with combat performance
+- AI analysis button — sends stats+metrics to Claude Sonnet for advice
+- Deep scan system — scrapes all JS/DOM/state for analysis (this scan)
+- Kingdom auto-walk — scheduled kingdom management
+- Gold-to-drachma auto-conversion — converts at cap (5B)
 - XP/Gold per hour tracking via hud_state.php polling
 - Security check pass/fail tracking with history
 
@@ -19655,21 +19655,21 @@ CURRENT LIMITATIONS:
 
       const prompt = `You are a senior automation engineer. Based on the deep analysis from Pass 1 (Combat) and Pass 2 (Systems), write a SPECIFIC implementation plan for improving the Olympus Awakened userscript.
 
-â•â•â• PASS 1 FINDINGS (Combat Mechanics): â•â•â•
+═══ PASS 1 FINDINGS (Combat Mechanics): ═══
 ${pass1Results.text}
 
-â•â•â• PASS 2 FINDINGS (Game Systems): â•â•â•
+═══ PASS 2 FINDINGS (Game Systems): ═══
 ${pass2Results.text}
 
-â•â•â• CURRENT SCRIPT STATE: â•â•â•
+═══ CURRENT SCRIPT STATE: ═══
 ${scriptFeatures}
 
-â•â•â• PLAYER STATE: â•â•â•
+═══ PLAYER STATE: ═══
 Stats: DUR=${readPlayerStats().dur} STR=${readPlayerStats().str} DEX=${readPlayerStats().dex} CON=${readPlayerStats().con} AGI=${readPlayerStats().agi} INT=${readPlayerStats().int} PER=${readPlayerStats().per}
 Level: ${readPlayerStats().level} | HP: ${readPlayerStats().hp}/${readPlayerStats().maxHp}
 Combat: ${all.attacks} attacks | ${pct(metrics(all).accuracy)} acc | ${pct(metrics(all).critRate)} crit | ${all.kills} kills / ${all.deaths} deaths
 
-â•â•â• YOUR TASK: â•â•â•
+═══ YOUR TASK: ═══
 
 Write SPECIFIC, IMPLEMENTABLE improvements. For each one provide:
 
@@ -19713,9 +19713,9 @@ Format as a numbered implementation plan with code blocks.`;
       return result;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════
     // Main deep scan orchestrator
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════
     async function deepScan(passNumber) {
       const key = localStorage.getItem(AI_KEY);
       if (!key) {
@@ -19723,11 +19723,11 @@ Format as a numbered implementation plan with code blocks.`;
         return { error: "No API key set" };
       }
 
-      console.log(SCAN_TAG, "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
-      console.log(SCAN_TAG, "â•‘   DEEP SCAN v2 â€” Multi-Pass Analysis â•‘");
-      console.log(SCAN_TAG, "â•‘   3 passes, ~$0.10-0.15 each         â•‘");
-      console.log(SCAN_TAG, "â•‘   Total: ~$0.30-0.45                  â•‘");
-      console.log(SCAN_TAG, "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+      console.log(SCAN_TAG, "╔══════════════════════════════════════╗");
+      console.log(SCAN_TAG, "║   DEEP SCAN v2 — Multi-Pass Analysis ║");
+      console.log(SCAN_TAG, "║   3 passes, ~$0.10-0.15 each         ║");
+      console.log(SCAN_TAG, "║   Total: ~$0.30-0.45                  ║");
+      console.log(SCAN_TAG, "╚══════════════════════════════════════╝");
 
       const results = {};
       const existing = loadScanResults();
@@ -19737,12 +19737,12 @@ Format as a numbered implementation plan with code blocks.`;
         if (!passNumber || passNumber === 1 || !existing.pass1) {
           console.log(SCAN_TAG, "");
           results.pass1 = await scanPass1();
-          console.log(SCAN_TAG, "âœ“ Pass 1 done");
-          console.log(SCAN_TAG, "â”€â”€â”€ Pass 1 Results â”€â”€â”€");
+          console.log(SCAN_TAG, "✓ Pass 1 done");
+          console.log(SCAN_TAG, "─── Pass 1 Results ───");
           console.log(results.pass1.text);
           saveScanPass('pass1', results.pass1);
         } else {
-          console.log(SCAN_TAG, "âœ“ Pass 1 cached (use deepScan(1) to re-run)");
+          console.log(SCAN_TAG, "✓ Pass 1 cached (use deepScan(1) to re-run)");
           results.pass1 = existing.pass1;
         }
 
@@ -19750,12 +19750,12 @@ Format as a numbered implementation plan with code blocks.`;
         if (!passNumber || passNumber === 2 || !existing.pass2) {
           console.log(SCAN_TAG, "");
           results.pass2 = await scanPass2(results.pass1);
-          console.log(SCAN_TAG, "âœ“ Pass 2 done");
-          console.log(SCAN_TAG, "â”€â”€â”€ Pass 2 Results â”€â”€â”€");
+          console.log(SCAN_TAG, "✓ Pass 2 done");
+          console.log(SCAN_TAG, "─── Pass 2 Results ───");
           console.log(results.pass2.text);
           saveScanPass('pass2', results.pass2);
         } else {
-          console.log(SCAN_TAG, "âœ“ Pass 2 cached (use deepScan(2) to re-run)");
+          console.log(SCAN_TAG, "✓ Pass 2 cached (use deepScan(2) to re-run)");
           results.pass2 = existing.pass2;
         }
 
@@ -19763,12 +19763,12 @@ Format as a numbered implementation plan with code blocks.`;
         if (!passNumber || passNumber === 3 || !existing.pass3) {
           console.log(SCAN_TAG, "");
           results.pass3 = await scanPass3(results.pass1, results.pass2);
-          console.log(SCAN_TAG, "âœ“ Pass 3 done");
-          console.log(SCAN_TAG, "â”€â”€â”€ Pass 3 Results â”€â”€â”€");
+          console.log(SCAN_TAG, "✓ Pass 3 done");
+          console.log(SCAN_TAG, "─── Pass 3 Results ───");
           console.log(results.pass3.text);
           saveScanPass('pass3', results.pass3);
         } else {
-          console.log(SCAN_TAG, "âœ“ Pass 3 cached (use deepScan(3) to re-run)");
+          console.log(SCAN_TAG, "✓ Pass 3 cached (use deepScan(3) to re-run)");
           results.pass3 = existing.pass3;
         }
 
@@ -19776,11 +19776,11 @@ Format as a numbered implementation plan with code blocks.`;
         const totalIn = (results.pass1?.usage?.input_tokens || 0) + (results.pass2?.usage?.input_tokens || 0) + (results.pass3?.usage?.input_tokens || 0);
         const totalOut = (results.pass1?.usage?.output_tokens || 0) + (results.pass2?.usage?.output_tokens || 0) + (results.pass3?.usage?.output_tokens || 0);
         console.log(SCAN_TAG, "");
-        console.log(SCAN_TAG, "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
-        console.log(SCAN_TAG, "â•‘   DEEP SCAN COMPLETE                 â•‘");
-        console.log(SCAN_TAG, `â•‘   Total tokens: ${totalIn} in / ${totalOut} out`);
-        console.log(SCAN_TAG, `â•‘   Est. cost: ~$${((totalIn * 3 + totalOut * 15) / 1000000).toFixed(2)}`);
-        console.log(SCAN_TAG, "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+        console.log(SCAN_TAG, "╔══════════════════════════════════════╗");
+        console.log(SCAN_TAG, "║   DEEP SCAN COMPLETE                 ║");
+        console.log(SCAN_TAG, `║   Total tokens: ${totalIn} in / ${totalOut} out`);
+        console.log(SCAN_TAG, `║   Est. cost: ~$${((totalIn * 3 + totalOut * 15) / 1000000).toFixed(2)}`);
+        console.log(SCAN_TAG, "╚══════════════════════════════════════╝");
         console.log(SCAN_TAG, "View results: deepScanResults() or deepScanResults(1/2/3)");
 
         return results;
@@ -19790,7 +19790,7 @@ Format as a numbered implementation plan with code blocks.`;
       }
     }
 
-    // â”€â”€ Storage â”€â”€
+    // ── Storage ──
     function saveScanPass(passKey, data) {
       try {
         const all = loadScanResults();
@@ -19829,7 +19829,7 @@ Format as a numbered implementation plan with code blocks.`;
       if (passNum) {
         const p = data['pass' + passNum];
         if (!p) { console.log(SCAN_TAG, `Pass ${passNum} not found. Run: deepScan(${passNum})`); return null; }
-        console.log(SCAN_TAG, `â•â•â• PASS ${passNum} RESULTS (${p.timestamp}) â•â•â•`);
+        console.log(SCAN_TAG, `═══ PASS ${passNum} RESULTS (${p.timestamp}) ═══`);
         if (p.usage) console.log(SCAN_TAG, `Tokens: in=${p.usage.input_tokens || '?'} out=${p.usage.output_tokens || '?'}`);
         console.log(p.text);
         return p;
@@ -19840,7 +19840,7 @@ Format as a numbered implementation plan with code blocks.`;
         if (key.startsWith('pass') && val && val.text) {
           const num = key.replace('pass','');
           const labels = { '1': 'Combat Mechanics', '2': 'Game Systems', '3': 'Script Improvements' };
-          console.log(SCAN_TAG, `â•â•â• PASS ${num}: ${labels[num] || key} (${val.timestamp}) â•â•â•`);
+          console.log(SCAN_TAG, `═══ PASS ${num}: ${labels[num] || key} (${val.timestamp}) ═══`);
           if (val.usage) console.log(SCAN_TAG, `Tokens: in=${val.usage.input_tokens || '?'} out=${val.usage.output_tokens || '?'}`);
           console.log(val.text);
           console.log(SCAN_TAG, "");
@@ -19849,7 +19849,7 @@ Format as a numbered implementation plan with code blocks.`;
       return data;
     }
 
-    // â”€â”€ Expose to console â”€â”€
+    // ── Expose to console ──
     _w.deepScan = deepScan;
     _w.deepScanResults = viewScanResults;
     _w.gameSnapshot = function() {
@@ -19888,7 +19888,7 @@ Format as a numbered implementation plan with code blocks.`;
       return result;
     }
 
-    // â”€â”€ Init â”€â”€
+    // ── Init ──
     setTimeout(() => { createToggle(); createPanel(); if (isVisible) refreshPanel(); startMonitor(); }, 1500);
     console.log(TAG, "v3 loaded. F4=panel. setAIApiKey('key') for Claude. setOpenAIKey('key') for GPT. deepScan() for full analysis. combatStats() for data.");
   })();
