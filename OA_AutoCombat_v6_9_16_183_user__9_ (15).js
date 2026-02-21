@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name         OA AutoCombat + Last Beast HUD + CapSolver (Stealth Mode)
 // @namespace    http://tampermonkey.net/
-// @version      6.9.69
-// @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.69: FIX - NPC scanning now saves NPCs correctly & stays on map tab! - v6.9.58: ⚔️ Auto: ON/OFF button in game header - click to toggle, syncs with F1
+// @version      6.9.82
+// @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.82: Add "und" abbreviation for underworld, "aet" for aetheria
+// @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.77: FIX - Added WAIT_MOVE phase with 200ms delay + position verification - v6.9.58: ⚔️ Auto: ON/OFF button in game header - click to toggle, syncs with F1
 // @author       You
 // @match        https://olympusawakened.com/game.php*
 // @match        https://www.olympusawakened.com/game.php*
@@ -174,6 +175,24 @@
       earlyFireMs: 0
     }
   };
+
+  // Auto-load saved preset
+  setTimeout(() => {
+    try {
+      const saved = localStorage.getItem('oa_stealth_preset_v1');
+      if (saved === 'off') {
+        STEALTH_CONFIG.enabled = false;
+        STEALTH_CONFIG.useKeyboard = false;
+        console.log('[Stealth] Loaded: OFF (direct clicks, zero delays)');
+      } else if (saved && STEALTH_PRESETS[saved]) {
+        Object.assign(STEALTH_CONFIG, STEALTH_PRESETS[saved]);
+        STEALTH_CONFIG.enabled = true;
+        STEALTH_CONFIG.useKeyboard = true;
+        console.log('[Stealth] Loaded preset:', saved);
+      }
+      window.__oaStealthLoadedPreset = saved || 'balanced';
+    } catch(e) { console.warn('[Stealth] Load error:', e); }
+  }, 100);
 
   // Apply a preset
   _w.useStealthPreset = function(presetName) {
@@ -7704,7 +7723,6 @@ function onAutoKey(e) {
 
       btn.click();
       return true;
-    }
 
     // ===== Plane Manager (5-plane aware) =====
     const PLANE_ORDER = ["underworld", "katabasis", "aetheria", "aerion", "olympus"];
@@ -12370,6 +12388,43 @@ secCheckbox.addEventListener('change', () => {
     // ========================================
     const LS_KINGDOM_DB = "oa_kingdom_database_v1";
 
+    // Read current location from DOM (data-map-coords)
+    function getMapCoordsFromDOM() {
+      try {
+        // Try data-map-coords attribute first (most reliable)
+        const coordsEl = document.querySelector('[data-map-coords]');
+        if (coordsEl) {
+          const coords = coordsEl.getAttribute('data-map-coords') || coordsEl.textContent || '';
+          // Format: "Loc: 000,Aet,000" or "000,Aet,000"
+          const match = coords.match(/(\d{1,3}),([^,]+),(\d{1,3})/);
+          if (match) {
+            return {
+              x: parseInt(match[1], 10),
+              plane: match[2].trim().toLowerCase(),
+              y: parseInt(match[3], 10)
+            };
+          }
+        }
+        
+        // Fallback to hud-location-coords
+        const hudCoordsEl = document.getElementById("hud-location-coords");
+        if (hudCoordsEl) {
+          const hudText = String(hudCoordsEl.textContent || "").trim();
+          const match = hudText.match(/(\d{3}),([^,]+),(\d{3})/);
+          if (match) {
+            return {
+              x: parseInt(match[1], 10),
+              plane: match[2].trim().toLowerCase(),
+              y: parseInt(match[3], 10)
+            };
+          }
+        }
+      } catch (e) {
+        console.log('[KingdomAuto] Error reading coords from DOM:', e);
+      }
+      return null;
+    }
+
     function loadKingdomDB() {
       try {
         const raw = localStorage.getItem(LS_KINGDOM_DB);
@@ -12388,9 +12443,9 @@ secCheckbox.addEventListener('change', () => {
 
     // Plane name normalization for Kingdom DB
     const KDB_PLANE_MAP = {
-      underworld: "underworld", under: "underworld", uw: "underworld",
+      underworld: "underworld", under: "underworld", uw: "underworld", und: "underworld",
       katabasis: "katabasis", kata: "katabasis", kat: "katabasis",
-      aetheria: "aetheria", aeth: "aetheria", aether: "aetheria",
+      aetheria: "aetheria", aeth: "aetheria", aether: "aetheria", aet: "aetheria",
       aerion: "aerion", aer: "aerion",
       olympus: "olympus", oly: "olympus",
       // Legacy/alternate names - map to correct planes
@@ -12417,13 +12472,16 @@ secCheckbox.addEventListener('change', () => {
       const ownerName = kingdomData.owner_name || "";
       const isUnowned = !ownerName || ownerName === "Unruled" || ownerName.toLowerCase() === "unclaimed";
       
-      if (isUnowned && (!npcs || npcs.length === 0)) {
-        // Skip: unowned AND no NPCs
-        return;
-      }
-
+      // Check if we already have this kingdom in DB with NPCs
       const db = loadKingdomDB();
       const key = getKingdomKey(normalizedPlane, coords.x, coords.y);
+      const existing = db[key];
+      const existingHasNPCs = existing && existing.npcs && existing.npcs.length > 0;
+      
+      if (isUnowned && (!npcs || npcs.length === 0) && !existingHasNPCs) {
+        // Skip: unowned AND no NPCs detected AND no NPCs in existing data
+        return;
+      }
 
       const kd = {
         plane: normalizedPlane,
@@ -12442,14 +12500,15 @@ secCheckbox.addEventListener('change', () => {
         keep_total: (kingdomData.keep_n_lvl || 0) + (kingdomData.keep_s_lvl || 0) + (kingdomData.keep_e_lvl || 0) + (kingdomData.keep_w_lvl || 0),
         curtain_total: (kingdomData.curtain_n_lvl || 0) + (kingdomData.curtain_s_lvl || 0) + (kingdomData.curtain_e_lvl || 0) + (kingdomData.curtain_w_lvl || 0),
         castle_total: (kingdomData.castle_n_lvl || 0) + (kingdomData.castle_s_lvl || 0) + (kingdomData.castle_e_lvl || 0) + (kingdomData.castle_w_lvl || 0),
-        npcs: npcs.length > 0 ? npcs : undefined, // Only store if NPCs present
+        // CRITICAL: Preserve existing NPCs if we didn't detect any new ones
+        npcs: npcs.length > 0 ? npcs : (existingHasNPCs ? existing.npcs : undefined),
         updatedAt: Date.now(),
       };
 
       db[key] = kd;
       saveKingdomDB(db);
       
-      const npcInfo = npcs.length > 0 ? ` | NPCs: ${npcs.join(', ')}` : '';
+      const npcInfo = (kd.npcs && kd.npcs.length > 0) ? ` | NPCs: ${kd.npcs.join(', ')}` : '';
       const unownedTag = isUnowned ? ' (Unruled with NPCs)' : '';
       console.log(`[KingdomDB] Saved: ${key} - Owner: ${kd.owner}${unownedTag}${npcInfo} (raw plane: ${plane})`);
 
@@ -12457,19 +12516,25 @@ secCheckbox.addEventListener('change', () => {
       if (typeof updateSingleMapCell === 'function') {
         updateSingleMapCell(normalizedPlane, coords.x, coords.y, kd);
       }
-
-      return { saved: true, panelReady: true, npcCount: npcs.length };
     }
     
     // Extract NPCs from the map panel
     function extractNPCsFromDOM() {
       const npcPanel = document.querySelector('[data-map-npcs-panel]');
-      if (!npcPanel) return [];
+      if (!npcPanel) {
+        console.log('[KingdomDB] [NPC Extract] No NPC panel found ([data-map-npcs-panel])');
+        return [];
+      }
       
       const npcList = npcPanel.querySelector('[data-map-npcs-list]');
-      if (!npcList) return [];
+      if (!npcList) {
+        console.log('[KingdomDB] [NPC Extract] No NPC list found ([data-map-npcs-list])');
+        return [];
+      }
       
       const npcItems = npcList.querySelectorAll('li');
+      console.log('[KingdomDB] [NPC Extract] Found', npcItems.length, 'NPC items in list');
+      
       const npcs = [];
       
       for (const item of npcItems) {
@@ -12477,7 +12542,10 @@ secCheckbox.addEventListener('change', () => {
         const nameEl = item.querySelector('.font-semibold');
         if (nameEl) {
           const name = nameEl.textContent.trim();
-          if (name) npcs.push(name);
+          if (name) {
+            console.log('[KingdomDB] [NPC Extract] Found NPC:', name);
+            npcs.push(name);
+          }
         }
       }
       
@@ -12486,16 +12554,19 @@ secCheckbox.addEventListener('change', () => {
 
     // Save NPCs directly when on map tab (NPC scanning mode)
     function saveNPCsFromMapTab(coords, plane) {
-      if (!coords || !plane) return { saved: false, panelReady: false, npcCount: 0 };
+      console.log('[KingdomDB] [NPC Mode] saveNPCsFromMapTab called with:', { coords, plane });
+      
+      if (!coords || !plane) {
+        console.log('[KingdomDB] [NPC Mode] ERROR: Missing coords or plane', { coords, plane });
+        return;
+      }
       
       const normalizedPlane = normalizeKDBPlane(plane);
-      if (!normalizedPlane) return { saved: false, panelReady: false, npcCount: 0 };
-
-      const npcPanel = document.querySelector('[data-map-npcs-panel]');
-      const npcList = npcPanel?.querySelector('[data-map-npcs-list]');
-      if (!npcPanel || !npcList) {
-        console.log('[KingdomDB] [NPC Mode] NPC panel not ready yet, waiting');
-        return { saved: false, panelReady: false, npcCount: 0 };
+      console.log('[KingdomDB] [NPC Mode] Normalized plane:', plane, '→', normalizedPlane);
+      
+      if (!normalizedPlane) {
+        console.log('[KingdomDB] [NPC Mode] ERROR: Plane normalization failed');
+        return;
       }
       
       // Extract NPCs from map panel
@@ -12507,11 +12578,12 @@ secCheckbox.addEventListener('change', () => {
       // For now, only save tiles with NPCs
       if (!npcs || npcs.length === 0) {
         console.log('[KingdomDB] [NPC Mode] No NPCs found, skipping save');
-        return { saved: false, panelReady: true, npcCount: 0 };
+        return;
       }
       
       const db = loadKingdomDB();
       const key = getKingdomKey(normalizedPlane, coords.x, coords.y);
+      console.log('[KingdomDB] [NPC Mode] Generated key:', key);
       
       // Check if we already have data for this kingdom
       const existing = db[key] || {};
@@ -12535,8 +12607,6 @@ secCheckbox.addEventListener('change', () => {
       if (typeof updateSingleMapCell === 'function') {
         updateSingleMapCell(normalizedPlane, coords.x, coords.y, kd);
       }
-
-      return { saved: true, panelReady: true, npcCount: npcs.length };
     }
 
     // Fetch and save kingdom data for current position
@@ -12658,25 +12728,12 @@ secCheckbox.addEventListener('change', () => {
       lastFetchedPos = null;
     }
 
-    function isNpcDetectionModeEnabled() {
-      try {
-        const raw = JSON.parse(localStorage.getItem("oa_kingdom_auto_settings_v3") || "null") || {};
-        const active = String(raw.activeProfile || "Default");
-        const profile = raw?.profiles?.[active] || raw?.profiles?.Default || raw;
-        return !!profile?.detectNPCs;
-      } catch {
-        return false;
-      }
-    }
-
     // Start/stop watcher based on tab
     function startKingdomDBPolling() {
       // Check tab periodically and manage watcher
       setInterval(() => {
         const tab = new URL(location.href).searchParams.get("tab") || "";
-        const npcMode = isNpcDetectionModeEnabled();
-        const shouldWatchMap = tab === "map" && !npcMode;
-        if (tab === "kingdoms" || shouldWatchMap) {
+        if (tab === "kingdoms" || tab === "map") {
           startKingdomDBWatcher();
         } else {
           stopKingdomDBWatcher();
@@ -12685,8 +12742,7 @@ secCheckbox.addEventListener('change', () => {
 
       // Initial check
       const tab = new URL(location.href).searchParams.get("tab") || "";
-      const npcMode = isNpcDetectionModeEnabled();
-      if (tab === "kingdoms" || (tab === "map" && !npcMode)) {
+      if (tab === "kingdoms" || tab === "map") {
         startKingdomDBWatcher();
       }
 
@@ -12747,6 +12803,40 @@ secCheckbox.addEventListener('change', () => {
       // Save kingdom at specific coordinates (use when on kingdoms tab)
       saveAt: function(x, y, plane) {
         return fetchAndSaveKingdomAt(x, y, plane);
+      },
+
+      // Save NPCs at current location (use when on map tab)
+      saveCurrentNPCs: function() {
+        try {
+          const locKey = getCurrentLocationKey();
+          if (!locKey) {
+            console.log('[KingdomDB] No location found');
+            return false;
+          }
+          
+          // Parse location: "005,olympus,035"
+          const parts = locKey.split(',');
+          if (parts.length !== 3) {
+            console.log('[KingdomDB] Invalid location format:', locKey);
+            return false;
+          }
+          
+          const x = parseInt(parts[0], 10);
+          const plane = parts[1].trim();
+          const y = parseInt(parts[2], 10);
+          
+          if (!Number.isFinite(x) || !plane || !Number.isFinite(y)) {
+            console.log('[KingdomDB] Invalid coordinates:', {x, plane, y});
+            return false;
+          }
+          
+          console.log('[KingdomDB] Manually saving NPCs at', {x, y, plane});
+          saveNPCsFromMapTab({x, y}, plane);
+          return true;
+        } catch (e) {
+          console.log('[KingdomDB] Error saving NPCs:', e);
+          return false;
+        }
       },
 
       getAll: () => loadKingdomDB(),
@@ -15156,6 +15246,15 @@ function submitColonize(panel, settings, st) {
       const dir = String(direction || "").toLowerCase();
       if (!dir) throw new Error("missing direction");
 
+      // Check if movement is on cooldown first
+      const moveButtons = document.querySelectorAll('form[data-map-move-form] button[type="submit"]');
+      if (moveButtons.length > 0) {
+        const anyDisabled = Array.from(moveButtons).some(btn => btn.disabled);
+        if (anyDisabled) {
+          throw new Error("Movement on cooldown");
+        }
+      }
+
       // 0) Try clickHudMove first (same method arrow keys use) - works on any tab with HUD
       try {
         if (typeof clickHudMove === "function") {
@@ -15544,9 +15643,8 @@ if (!Array.isArray(s.steps) || s.steps.length < 1) {
       renderWidget();
       notify("Kingdom Auto: starting (F4 to stop).");
 
-      // In NPC detection mode we always operate from the map tab.
-      // Otherwise only visit map if we need to teleport to the starting corner.
-      if (s.detectNPCs || s.teleportToStart) gotoTab("map");
+      // Only visit Map if we need to teleport to the starting corner.
+      if (s.teleportToStart) gotoTab("map");
       else gotoTab("kingdoms");
     }
 
@@ -16874,7 +16972,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           st.phase = PHASE.NAV_KINGDOMS;
           st.lastActAt = now;
           saveState(st);
-          gotoTab(settings.detectNPCs ? "map" : "kingdoms");
+          gotoTab("kingdoms");
           return;
         }
 
@@ -16907,7 +17005,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             st.phase = PHASE.NAV_KINGDOMS;
             st.lastActAt = now;
             saveState(st);
-            gotoTab(settings.detectNPCs ? "map" : "kingdoms");
+            gotoTab("kingdoms");
             return;
           }
 
@@ -16918,7 +17016,7 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
             st.phase = PHASE.NAV_KINGDOMS;
             st.lastActAt = now;
             saveState(st);
-            gotoTab(settings.detectNPCs ? "map" : "kingdoms");
+            gotoTab("kingdoms");
             return;
           }
           // stay on map until we confirm position changed
@@ -16928,17 +17026,16 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
         }
 
         if (st.phase === PHASE.NAV_KINGDOMS) {
+          // Position already verified in WAIT_MOVE phase
+          
           // NPC detection mode: stay on map tab only
           if (settings.detectNPCs) {
-            console.log('[KingdomAuto] [NPC Mode] NAV_KINGDOMS phase - checking tab. Current:', tab, 'Want: map');
             if (tab !== "map") {
-              console.log('[KingdomAuto] [NPC Mode] Switching to map tab...');
               st.lastActAt = now; 
               saveState(st); 
               gotoTab("map"); 
               return; 
             }
-            console.log('[KingdomAuto] [NPC Mode] On map tab, moving to RUN_TILE phase');
             st.phase = PHASE.RUN_TILE;
             st.stepIdx = 0;
             st.justColonized = false;
@@ -16948,15 +17045,12 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           }
           
           // Normal mode: use kingdoms tab
-          console.log('[KingdomAuto] [Normal Mode] NAV_KINGDOMS phase - checking tab. Current:', tab, 'Want: kingdoms');
           if (tab !== "kingdoms") { 
-            console.log('[KingdomAuto] [Normal Mode] Switching to kingdoms tab...');
             st.lastActAt = now; 
             saveState(st); 
             gotoTab("kingdoms"); 
             return; 
           }
-          console.log('[KingdomAuto] [Normal Mode] On kingdoms tab, moving to RUN_TILE phase');
           st.phase = PHASE.RUN_TILE;
           st.stepIdx = 0;
           st.justColonized = false;
@@ -16974,48 +17068,44 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
               gotoTab("map"); 
               return; 
             }
-
-            // Ensure HUD position is synced to this tile before reading NPC panel.
-            try {
-              const hudCoordsEl = document.getElementById("hud-location-coords");
-              const hudText = String(hudCoordsEl?.textContent || "").trim();
-              const coordMatch = hudText.match(/(\d{3}),([^,]+),(\d{3})/);
-              if (coordMatch && st.cur) {
-                const hudX = parseInt(coordMatch[1], 10);
-                const hudY = parseInt(coordMatch[3], 10);
-                if (hudX !== st.cur.x || hudY !== st.cur.y) {
-                  st.positionMismatchCount = (st.positionMismatchCount || 0) + 1;
-                  st.lastActAt = now;
-                  saveState(st);
-                  return;
-                }
-              }
-              st.positionMismatchCount = 0;
-            } catch {}
             
-            // Save NPCs directly from map tab (no API call needed!)
+            // Wait for NPC panel to update with new location's NPCs
+            // We use a new phase to track this wait
+            if (!st.npcPanelWaitStarted) {
+              st.npcPanelWaitStarted = now;
+              st.lastActAt = now;
+              saveState(st);
+              return;
+            }
+            
+            const waitElapsed = now - st.npcPanelWaitStarted;
+            if (waitElapsed < 300) {
+              // Wait for NPC panel to load (300ms)
+              return;
+            }
+            
+            // Now save NPCs from map tab
             try {
               if (st.cur) {
-                const plane = settings.plane || "";
-                console.log('[KingdomAuto] [NPC Mode] Saving NPCs at', st.cur);
-                const saveResult = saveNPCsFromMapTab(st.cur, plane);
-
-                // If map NPC panel is still loading, stay on this tile and retry.
-                if (!saveResult?.panelReady) {
-                  st.lastActAt = now;
-                  saveState(st);
-                  await sleep(250);
-                  return;
+                // Read actual plane from DOM instead of relying on settings
+                const mapCoords = getMapCoordsFromDOM();
+                const plane = mapCoords?.plane || settings.plane || "";
+                
+                if (!plane) {
+                  console.log('[KingdomAuto] [NPC Mode] ERROR: Cannot determine plane name');
+                  console.log('[KingdomAuto] [NPC Mode] mapCoords:', mapCoords);
+                  console.log('[KingdomAuto] [NPC Mode] settings.plane:', settings.plane);
                 }
-
-                // Wait for NPC panel to stabilize
-                await sleep(300);
+                
+                console.log('[KingdomAuto] [NPC Mode] Saving NPCs at', st.cur, 'on plane:', plane);
+                saveNPCsFromMapTab(st.cur, plane);
               }
             } catch (e) {
               console.log('[KingdomAuto] [NPC Mode] Error saving NPCs:', e);
             }
             
             // Done - move to next tile (no kingdom steps in NPC mode)
+            st.npcPanelWaitStarted = null; // Reset wait tracker
             st.phase = PHASE.MOVE_NEXT;
             st.lastActAt = now;
             saveState(st);
@@ -17169,20 +17259,99 @@ s.bottomLeft = { x: clampInt(m.querySelector("#oa-ka-blx").value, 0, 49), y: cla
           const next = computeNextTile(st);
           if (!next) return stop("Kingdom Auto: finished rectangle.");
 
-          try { await moveMap(next.move); } catch (e) { return stop("Kingdom Auto: move failed (check CSRF/move buttons)."); }
+          try { 
+            await moveMap(next.move); 
+          } catch (e) { 
+            const msg = String(e?.message || e);
+            if (msg.includes("cooldown")) {
+              // Movement on cooldown - wait and retry
+              console.log('[KingdomAuto] Movement on cooldown, waiting...');
+              return; // Retry next tick (150ms)
+            }
+            return stop("Kingdom Auto: move failed - " + msg);
+          }
 
-          st.cur = { x: next.x, y: next.y };
+          // Store TARGET position separately - don't update st.cur yet!
+          st.targetPos = { x: next.x, y: next.y };
           st.rowDir = next.rowDir;
-          st.phase = PHASE.NAV_KINGDOMS;
+          st.phase = PHASE.WAIT_MOVE;
           st.stepIdx = 0;
           st.justColonized = false;
+          st.positionMismatchCount = 0;
+          st.moveStartedAt = now; // Track when move started
           st.lastActAt = now;
           saveState(st);
-
-          // Wait for character movement animation to complete
-          await sleep(300);
-          gotoTab(settings.detectNPCs ? "map" : "kingdoms");
           return;
+        }
+
+        if (st.phase === PHASE.WAIT_MOVE) {
+          // Wait minimum 200ms for character to move and DOM to update
+          const elapsed = now - (st.moveStartedAt || now);
+          if (elapsed < 200) {
+            return; // Wait for movement
+          }
+          
+          // Now verify position from DOM
+          const mapCoords = getMapCoordsFromDOM();
+          
+          if (!mapCoords) {
+            console.log('[KingdomAuto] ERROR: Cannot read map coords from DOM');
+            st.positionMismatchCount = (st.positionMismatchCount || 0) + 1;
+            if (st.positionMismatchCount >= 20) {
+              return stop('[KingdomAuto] Failed to read map position - stopping');
+            }
+            return; // Retry next tick
+          }
+          
+          if (!st.targetPos) {
+            console.log('[KingdomAuto] ERROR: targetPos missing in WAIT_MOVE');
+            return stop('[KingdomAuto] Invalid state - no target position');
+          }
+          
+          const targetX = st.targetPos.x;
+          const targetY = st.targetPos.y;
+
+          if (mapCoords.x !== targetX || mapCoords.y !== targetY) {
+            st.positionMismatchCount = (st.positionMismatchCount || 0) + 1;
+            
+            console.log('[KingdomAuto] Waiting for position update', {
+              target: st.targetPos,
+              actual: mapCoords,
+              elapsed: elapsed + 'ms',
+              attempts: st.positionMismatchCount
+            });
+            
+            // Position still not updated - keep waiting
+            if (st.positionMismatchCount < 40) { // Increased from 20 to 40 (6 seconds)
+              return; // Check again next tick
+            } else {
+              // Timeout after 6 seconds - use actual DOM position and continue
+              console.log('[KingdomAuto] Position timeout - resyncing to actual position', { 
+                target: st.targetPos, 
+                actual: mapCoords 
+              });
+              st.cur = { x: mapCoords.x, y: mapCoords.y };
+              st.positionMismatchCount = 0;
+              st.phase = PHASE.NAV_KINGDOMS;
+              st.targetPos = null;
+              st.lastActAt = now;
+              saveState(st);
+              return;
+            }
+          } else {
+            // Position matches! Character has arrived at target
+            console.log('[KingdomAuto] Position verified!', {
+              position: mapCoords,
+              elapsed: elapsed + 'ms'
+            });
+            st.cur = { x: mapCoords.x, y: mapCoords.y };
+            st.positionMismatchCount = 0;
+            st.phase = PHASE.NAV_KINGDOMS;
+            st.targetPos = null;
+            st.lastActAt = now;
+            saveState(st);
+            return;
+          }
         }
 
         saveState(st);
@@ -18780,6 +18949,57 @@ Read the image and respond with exactly those two lines.`;
       });
 
       document.body.appendChild(btn);
+
+      // Stealth Preset Menu
+      setTimeout(() => {
+        if (document.getElementById("oa-stealth-preset-selector")) return;
+        
+        const dd = document.createElement("select");
+        dd.id = "oa-stealth-preset-selector";
+        dd.style.cssText = "position:fixed;bottom:130px;right:50px;padding:4px 8px;border-radius:8px;font-size:11px;border:2px solid rgba(139,92,246,0.6);background:rgba(139,92,246,0.2);color:#c4b5fd;cursor:pointer;font-weight:600;z-index:99998;";
+        
+        [['off','❌ OFF'],['maximum','🐌 Max'],['balanced','⚖️ Bal'],['fast','⚡ Fast'],['minimal','🚀 Min'],['ludicrous','💀 Lud']].forEach(([v,l]) => {
+          const o = document.createElement("option");
+          o.value = v;
+          o.textContent = l;
+          dd.appendChild(o);
+        });
+        
+        dd.value = localStorage.getItem('oa_stealth_preset_v1') || 'balanced';
+        
+        dd.onchange = (e) => {
+          const val = e.target.value;
+          const wasOn = !!(window.__oaState && window.__oaState.enabled);
+          
+          if (val === 'off') {
+            STEALTH_CONFIG.enabled = false;
+            STEALTH_CONFIG.useKeyboard = false;
+            localStorage.setItem('oa_stealth_preset_v1', 'off');
+            console.log('[Stealth] OFF - Direct clicks, zero delays');
+          } else {
+            const p = STEALTH_PRESETS[val];
+            if (p) {
+              STEALTH_CONFIG.enabled = true;
+              STEALTH_CONFIG.useKeyboard = true;
+              Object.assign(STEALTH_CONFIG, p);
+              localStorage.setItem('oa_stealth_preset_v1', val);
+              console.log('[Stealth] Applied:', p.name);
+            }
+          }
+          
+          // Restart combat if it was running
+          if (wasOn && window.__oaState) {
+            console.log('[Stealth] Restarting combat...');
+            window.__oaState.enabled = false;
+            setTimeout(() => {
+              document.dispatchEvent(new KeyboardEvent("keydown", {key: "F1", code: "F1", keyCode: 112, bubbles: true}));
+            }, 200);
+          }
+        };
+        
+        document.body.appendChild(dd);
+        console.log('[Stealth] Menu created');
+      }, 700);
       setInterval(updateBtn, 500);
       updateBtn();
       window.__oaUpdateAutoCombatBtn = updateBtn;
@@ -19424,5 +19644,1130 @@ Format as a numbered implementation plan with code blocks.`;
     setTimeout(() => { createToggle(); createPanel(); if (isVisible) refreshPanel(); startMonitor(); }, 1500);
     console.log(TAG, "v3 loaded. F4=panel. setAIApiKey('key') for Claude. setOpenAIKey('key') for GPT. deepScan() for full analysis. combatStats() for data.");
   })();
+// ===== OA AutoCraft Module =====
+// Drop inside your main userscript IIFE. Runs on game.php (all tabs).
+// ALL actions use fetch — zero page reloads except intentional combat tab switch.
+
+(function initAutoCraftModule() {
+  'use strict';
+
+  const STORAGE_KEY   = 'oa_autocraft_v2';
+  const RETURN_AT_KEY = 'oa_autocraft_return_at';
+  const RETURNING_KEY  = 'oa_autocraft_returning';
+  const COMBAT_MODE_KEY = 'oa_autocraft_combat_mode'; // 'inv_full' | 'timer'
+  const ENABLED_KEY    = 'oa_autocraft_enabled';     // '1' = user wants it running
+  const LOG           = (...a) => console.log('[AutoCraft]', ...a);
+
+  function currentTab() {
+    try { return new URLSearchParams(window.location.search).get('tab') || 'combat'; }
+    catch { return 'combat'; }
+  }
+  function onCraftingTab() { return currentTab() === 'crafting'; }
+  function onCombatTab()   { return currentTab() === 'combat';   }
+
+  function loadSaved() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); } catch { return {}; } }
+  function savePref(o) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({...loadSaved(),...o})); } catch {} }
+
+  function goToCombat()   { location.href = '/game.php?tab=combat';   }
+  function goToCrafting() { location.href = '/game.php?tab=crafting'; }
+
+  function setReturnAlarm(s) { try { localStorage.setItem(RETURN_AT_KEY, String(Date.now()+s*1000)); } catch {} }
+  function clearReturnAlarm(){ try { localStorage.removeItem(RETURN_AT_KEY); } catch {} }
+  function getReturnAt()     { try { return parseInt(localStorage.getItem(RETURN_AT_KEY)||'0',10)||0; } catch { return 0; } }
+  function setReturning()    { try { localStorage.setItem(RETURNING_KEY,'1'); } catch {} }
+  function clearReturning()  { try { localStorage.removeItem(RETURNING_KEY); } catch {} }
+  function isReturning()     { try { return localStorage.getItem(RETURNING_KEY)==='1'; } catch { return false; } }
+
+  function fireF1() {
+    document.dispatchEvent(new KeyboardEvent('keydown',{key:'F1',code:'F1',keyCode:112,which:112,bubbles:true,cancelable:true,composed:true}));
+  }
+  function isScriptAutoCombatOn() { try { return !!window.__autoCombat?.status?.()?.enabled; } catch { return false; } }
+  function enableAutoCombat()  { if (!isScriptAutoCombatOn()) { LOG('F1 ON');  fireF1(); } }
+  function disableAutoCombat() { if ( isScriptAutoCombatOn()) { LOG('F1 OFF'); fireF1(); } }
+
+  // ── Core fetch: serialize a form's hidden fields + a button's name/value ─
+  function formPost(form, btn) {
+    const params = new URLSearchParams();
+    for (const el of form.elements) {
+      if (!el.name || el.disabled) continue;
+      if ((el.type==='checkbox'||el.type==='radio') && !el.checked) continue;
+      params.append(el.name, el.value);
+    }
+    if (btn && btn.name) params.set(btn.name, btn.value);
+    LOG('POST ' + params.toString().slice(0,120));
+    return fetch('/game.php?tab=crafting', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body: params.toString(),
+    }).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+      .then(h => new DOMParser().parseFromString(h,'text/html'));
+  }
+
+  // ── DOM parsing ───────────────────────────────────────────────────────────
+  function parseQueue(doc) {
+    const chip = doc.querySelector('.craft-queue-panel .oa-chip');
+    let used=0, max=2;
+    if (chip) { const m=chip.textContent.match(/(\d+)\/(\d+)/); if(m){used=+m[1];max=+m[2];} }
+
+    // Find all claim forms — each queue slot that's done has one
+    const claimForms = Array.from(doc.querySelectorAll('[data-queue-claim-form]'))
+      .filter(f => !f.closest('[hidden]') && !f.classList.contains('hidden'));
+
+    const items = Array.from(doc.querySelectorAll('[data-craft-queue-item]')).map(el => {
+      const remaining = parseInt(el.dataset.remainingSeconds||'0',10)||0;
+      const claimForm = el.querySelector('[data-queue-claim-form]');
+      const claimBtn  = claimForm && !claimForm.classList.contains('hidden') && !claimForm.closest('[hidden]')
+        ? claimForm.querySelector('button[value="claim_craft"]') : null;
+      return { remaining, ready: !!claimBtn, claimForm: claimBtn ? claimForm : null, claimBtn };
+    });
+
+    if (!items.length && used > 0) for(let i=0;i<used;i++) items.push({remaining:999,ready:false,claimForm:null,claimBtn:null});
+
+    return { used, max, items, claimForms };
+  }
+
+  function parseSalvageCount(doc) { return doc.querySelectorAll('[data-salvage-card]').length; }
+  function minRemaining(q) {
+    const ip = q.items.filter(i=>!i.ready&&i.remaining>0);
+    return ip.length ? Math.min(...ip.map(i=>i.remaining)) : 0;
+  }
+
+  function patchLiveDom(fd) {
+    try {
+      // Replace queue panel
+      const fq=fd.querySelector('.craft-queue-panel'), lq=document.querySelector('.craft-queue-panel');
+      if(fq&&lq) lq.replaceWith(fq.cloneNode(true));
+      // Replace salvage section
+      const fs=fd.querySelector('[data-salvage-panel]'), ls=document.querySelector('[data-salvage-panel]');
+      if(fs&&ls) ls.replaceWith(fs.cloneNode(true));
+      // Rotate CSRF
+      const fc=fd.querySelector('input[name="csrf_token"]');
+      if(fc) document.querySelectorAll('input[name="csrf_token"]').forEach(e=>e.value=fc.value);
+    } catch(e) { LOG('patchLiveDom non-fatal:',e); }
+  }
+
+  // Check if any ingredient has fewer than required by parsing "have/need" numbers.
+  // Works regardless of color class (green/amber/white/red).
+  function hasInsufficientMats(doc) {
+    const spans = doc.querySelectorAll('.ingredient span');
+    for (const span of spans) {
+      const m = span.textContent.trim().match(/^(\d[\d,]*)\s*\/\s*(\d[\d,]*)$/);
+      if (!m) continue;
+      const have = parseInt(m[1].replace(/,/g,''), 10);
+      const need = parseInt(m[2].replace(/,/g,''), 10);
+      if (have < need) {
+        LOG('Insufficient mat: have ' + have + ', need ' + need + ' (' + span.textContent.trim() + ')');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function sleep(ms) { return new Promise(r=>setTimeout(r,Math.max(0,ms))); }
+  function randGauss(mean,std) {
+    let u=Math.random(); if(u<0.0001)u=0.0001;
+    return Math.max(mean*0.3, Math.round(mean+Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*Math.random())*std));
+  }
+
+  // ── UI refs ───────────────────────────────────────────────────────────────
+  let running=false, pollTimer=null, loopsCompleted=0;
+  let _statusEl=null, _loopEl=null, _queueEl=null;
+
+  function setStatus(msg) { LOG(msg); if(_statusEl) _statusEl.textContent=msg; }
+  function updateDisplay(q) { if(_queueEl) _queueEl.textContent=q.used+'/'+q.max; }
+
+  // ── Main loop — NO page reloads ───────────────────────────────────────────
+  async function runLoop() {
+    if (!running) return;
+    const saved = loadSaved();
+    if (!saved.recipeId) { setStatus('Select a recipe first'); return; }
+
+    try {
+      let queue   = parseQueue(document);
+      let salvage = parseSalvageCount(document);
+      updateDisplay(queue);
+      LOG('queue='+queue.used+'/'+queue.max+' ready='+queue.items.filter(i=>i.ready).length+' salvage='+salvage);
+
+      // 1. Claim all ready items via fetch (serialize their real forms)
+      const readyItems = queue.items.filter(i=>i.ready && i.claimForm && i.claimBtn);
+      if (readyItems.length > 0) {
+        setStatus('Claiming '+readyItems.length+' item(s)...');
+        for (const item of readyItems) {
+          await sleep(randGauss(600,150));
+          LOG('Claiming — form fields: queue_id='+item.claimForm.querySelector('[name="queue_id"]')?.value);
+          const doc = await formPost(item.claimForm, item.claimBtn);
+          patchLiveDom(doc);
+          queue   = parseQueue(doc);
+          salvage = parseSalvageCount(doc);
+          updateDisplay(queue);
+        }
+        // Loop back to re-check state after claiming
+        await sleep(300);
+        if (running) runLoop();
+        return;
+      }
+
+      // 2. Salvage — always do it if there are items, regardless of queue state.
+      //    When returning from a full-inventory combat run, the queue is still occupied
+      //    but we need to clear salvage before we can continue.
+      if (salvage > 0) {
+        const salvageBtn = document.querySelector('button[value="salvage_all_items"]');
+        const salvageForm = salvageBtn?.closest('form');
+        if (salvageForm && salvageBtn) {
+          setStatus('Salvaging '+salvage+' item(s)...');
+          await sleep(randGauss(700,180));
+          const doc = await formPost(salvageForm, salvageBtn);
+          patchLiveDom(doc);
+          queue   = parseQueue(doc);
+          salvage = parseSalvageCount(doc);
+          updateDisplay(queue);
+          loopsCompleted++;
+          if(_loopEl) _loopEl.textContent='Loops: '+loopsCompleted;
+          setStatus('Loop '+loopsCompleted+' done — continuing...');
+          await sleep(randGauss(400,100));
+        }
+      }
+
+      // 3. Check mats before trying to craft
+      if (hasInsufficientMats(document)) {
+        setStatus('Out of mats — farming combat until inventory full...');
+        LOG('Insufficient mats detected before crafting');
+        await sleep(1000);
+        try { localStorage.setItem(COMBAT_MODE_KEY, 'inv_full'); } catch {}
+        setReturnAlarm(1);
+        enableAutoCombat();
+        await sleep(400);
+        goToCombat();
+        return;
+      }
+
+      // Fill queue via fetch — track how many we queued up
+      let crafted = 0;
+      while (running && queue.used < queue.max) {
+        setStatus('Crafting slot '+(queue.used+1)+'/'+queue.max+'...');
+        await sleep(randGauss(700,180));
+        const recipeForm = document.querySelector('form:has(input[name="recipe_id"][value="'+saved.recipeId+'"])');
+        const craftBtn   = recipeForm?.querySelector('button[type="submit"]');
+        const doc = (recipeForm && craftBtn)
+          ? await formPost(recipeForm, craftBtn)
+          : await (()=>{
+              const params=new URLSearchParams({csrf_token:document.querySelector('input[name="csrf_token"]')?.value||'',action:'craft_recipe',recipe_id:saved.recipeId,craft_tab:saved.craftTab||'armor',rarity:saved.rarity||'all'});
+              return fetch('/game.php?tab=crafting',{method:'POST',credentials:'include',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:params.toString()}).then(r=>r.text()).then(h=>new DOMParser().parseFromString(h,'text/html'));
+            })();
+        patchLiveDom(doc);
+
+        // Check ingredients in the response — if now short, head to combat for mats
+        if (hasInsufficientMats(doc)) {
+          setStatus('Out of mats — farming combat until inventory full...');
+          await sleep(1000);
+          try { localStorage.setItem(COMBAT_MODE_KEY, 'inv_full'); } catch {}
+          setReturnAlarm(1);
+          enableAutoCombat();
+          await sleep(400);
+          goToCombat();
+          return;
+        }
+
+        crafted++;
+        const freshQueue = parseQueue(doc);
+        // If server confirms queue grew, update; otherwise trust crafted counter
+        if (freshQueue.used > queue.used) queue = freshQueue;
+        else queue = { ...queue, used: queue.used + 1 };
+        salvage = parseSalvageCount(doc);
+        updateDisplay(queue);
+        await sleep(randGauss(350,100));
+      }
+
+      // 4. We have items in queue (or just crafted some) — go fight while waiting for craft
+      if (running && (queue.used > 0 || crafted > 0)) {
+        setStatus('Queue full — heading to combat while crafts finish...');
+        await sleep(randGauss(800,200));
+        // Use actual remaining time; fall back to 90s if unreadable
+        const waitSecs = minRemaining(queue) > 0 ? minRemaining(queue) : 90;
+        try { localStorage.setItem(COMBAT_MODE_KEY, 'timer'); } catch {}
+        setReturnAlarm(waitSecs + 5); // +5s buffer so items are definitely done
+        enableAutoCombat();
+        await sleep(400);
+        goToCombat();
+        return;
+      }
+
+      // Fallback: nothing happened — wait and retry
+      setStatus('Nothing to do — retrying in 10s...');
+      await sleep(10000);
+      if (running) runLoop();
+
+    } catch(err) {
+      LOG('Loop error:', err);
+      setStatus('Error: '+(err.message||err)+' — retrying in 5s');
+      if(running) pollTimer=setTimeout(runLoop,5000);
+    }
+  }
+
+  // =========================================================================
+  // =========================================================================
+  // COMBAT TAB — watch combat log for inventory full, then head to crafting
+  // =========================================================================
+  function initCombatWatcher() {
+    if (!getReturnAt()) return;
+    const mode = localStorage.getItem(COMBAT_MODE_KEY) || 'timer';
+    LOG('Combat watcher — mode: ' + mode);
+    setTimeout(enableAutoCombat, 1200);
+
+    const badge = document.createElement('div');
+    badge.style.cssText = 'position:fixed;top:16px;right:16px;z-index:2147483640;background:rgba(8,10,22,0.95);border:1px solid rgba(212,175,55,0.55);border-radius:10px;padding:8px 14px;color:#e2e8f0;font-family:Cinzel,Georgia,serif;font-size:11px;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.7);';
+    badge.innerHTML = mode === 'inv_full'
+      ? '&#9874; AutoCraft \u2014 farming until inventory full'
+      : '&#9874; AutoCraft \u2014 returning in <span id="oa-ac-cbd">\u2026</span>';
+    document.body.appendChild(badge);
+
+    function isBotcheckActive() {
+      const el = document.querySelector('[data-botcheck-input], [data-botcheck-submit], [data-botcheck-image]');
+      return !!el && el.offsetParent !== null;
+    }
+
+    function returnToCrafting() {
+      // If user disabled autocraft while we were farming, abort cleanly
+      const stillEnabled = (() => { try { return localStorage.getItem(ENABLED_KEY) === '1'; } catch { return false; } })();
+      if (!stillEnabled) {
+        LOG('Autocraft disabled — aborting return');
+        try { localStorage.removeItem(COMBAT_MODE_KEY); } catch {}
+        clearReturnAlarm(); clearReturning();
+        disableAutoCombat();
+        badge.remove();
+        return;
+      }
+      if (isBotcheckActive()) {
+        LOG('Security check active — holding return, rechecking in 5s');
+        badge.innerHTML = '&#9874; AutoCraft \u2014 security check\u2026';
+        setTimeout(returnToCrafting, 5000);
+        return;
+      }
+      LOG('Returning to crafting (mode: ' + mode + ')');
+      try { localStorage.removeItem(COMBAT_MODE_KEY); } catch {}
+      setReturning();
+      clearReturnAlarm();
+      disableAutoCombat();
+      badge.remove();
+      setTimeout(goToCrafting, 600);
+    }
+
+    // ── inv_full mode: watch combat log for "Inventory full" ─────────────
+    if (mode === 'inv_full') {
+      function isInventoryFull(text) { return /inventory full/i.test(text); }
+
+      const existing = document.querySelectorAll('#combat-log .log-line');
+      for (const line of existing) {
+        if (isInventoryFull(line.textContent)) {
+          LOG('Inventory already full on load');
+          setTimeout(returnToCrafting, 1000);
+          return;
+        }
+      }
+
+      const combatLog = document.getElementById('combat-log');
+      if (!combatLog) {
+        LOG('No #combat-log — fallback 10min');
+        setTimeout(returnToCrafting, 10 * 60 * 1000);
+        return;
+      }
+
+      const obs = new MutationObserver(mutations => {
+        for (const mut of mutations) {
+          for (const node of mut.addedNodes) {
+            if (node.nodeType !== 1) continue;
+            if (isInventoryFull(node.textContent)) {
+              LOG('Inventory full in combat log');
+              obs.disconnect();
+              setTimeout(returnToCrafting, 1200);
+              return;
+            }
+          }
+        }
+      });
+      obs.observe(combatLog, { childList: true, subtree: true });
+      LOG('Watching combat log for inventory full');
+      return;
+    }
+
+    // ── timer mode: poll crafting page until items are claimable ─────────
+    const returnAt = getReturnAt();
+    const cdEl = document.getElementById('oa-ac-cbd');
+
+    async function craftingItemsReady() {
+      try {
+        const res = await fetch('/game.php?tab=crafting', { credentials: 'include' });
+        if (!res.ok) return false;
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+        const btn = doc.querySelector('[data-queue-claim-form] button[value="claim_craft"]');
+        if (btn && !btn.closest('[hidden]') && !btn.closest('.hidden')) return true;
+        const chip = doc.querySelector('.craft-queue-panel .oa-chip');
+        if (chip) { const m = chip.textContent.match(/(\d+)\/(\d+)/); if (m && +m[1] === 0) return true; }
+        return false;
+      } catch { return false; }
+    }
+
+    async function tick() {
+      if (isBotcheckActive()) {
+        if (cdEl) cdEl.textContent = 'security check…';
+        setTimeout(tick, 5000);
+        return;
+      }
+      const ms = returnAt - Date.now();
+      if (ms > 8000) {
+        const s = Math.ceil(ms / 1000);
+        if (cdEl) cdEl.textContent = s >= 60 ? Math.floor(s/60) + 'm ' + (s%60) + 's' : s + 's';
+        setTimeout(tick, 1000);
+        return;
+      }
+      if (cdEl) cdEl.textContent = 'checking…';
+      const ready = await craftingItemsReady();
+      if (ready) { returnToCrafting(); return; }
+      if (cdEl) cdEl.textContent = 'waiting…';
+      setTimeout(tick, 3000);
+    }
+    tick();
+  }
+
+  // =========================================================================
+  // UI
+  // =========================================================================
+  function scrapeRecipes() {
+    return Array.from(document.querySelectorAll('[data-recipe-card]')).map(el=>{
+      let recipeId='',craftTab='armor',rarity='all';
+      try{const u=new URL(el.getAttribute('href')||'',location.origin);recipeId=u.searchParams.get('recipe_id')||'';craftTab=u.searchParams.get('craft_tab')||'armor';rarity=u.searchParams.get('rarity')||'all';}catch{}
+      const n=el.querySelector('[class*="font-semibold"]');
+      return{recipeId,craftTab,rarity,name:n?n.textContent.trim():(el.dataset.recipeName||recipeId),category:el.dataset.recipeCategory||el.dataset.recipeSkill||'other'};
+    }).filter(r=>r.recipeId);
+  }
+
+  function buildUI() {
+    document.getElementById('oa-autocraft-panel')?.remove();
+    const saved=loadSaved(),recipes=scrapeRecipes(),grouped={};
+    recipes.forEach(r=>{(grouped[r.category||'other']=grouped[r.category||'other']||[]).push(r);});
+    const optHTML=Object.entries(grouped).map(([g,rs])=>
+      `<optgroup label="${g[0].toUpperCase()+g.slice(1)}">${rs.map(r=>`<option value="${r.recipeId}" data-craft-tab="${r.craftTab}" data-rarity="${r.rarity}"${saved.recipeId===r.recipeId?' selected':''}>${r.name}</option>`).join('')}</optgroup>`
+    ).join('');
+
+    const panel=document.createElement('div');
+    panel.id='oa-autocraft-panel';
+    panel.style.cssText='position:fixed;bottom:16px;right:16px;z-index:2147483640;background:rgba(8,10,22,0.97);border:1px solid rgba(212,175,55,0.55);border-radius:12px;padding:14px 16px;color:#e2e8f0;font-family:Cinzel,Georgia,serif;font-size:12px;min-width:260px;max-width:320px;box-shadow:0 6px 32px rgba(0,0,0,0.75);user-select:none;';
+    panel.innerHTML=`<style>#oa-autocraft-panel select,#oa-autocraft-panel button{font-family:inherit}</style>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-weight:700;color:#d4af37;font-size:13px;">&#9874; AutoCraft</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="oa-ac-loop" style="font-size:10px;color:#64748b;">Loops: 0</span>
+          <button id="oa-ac-col" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:0 2px;">&minus;</button>
+        </div>
+      </div>
+      <div id="oa-ac-body">
+        <label style="display:block;font-size:10px;color:#64748b;margin-bottom:4px;text-transform:uppercase;">Recipe</label>
+        <select id="oa-ac-sel" style="width:100%;background:rgba(0,0,0,.45);color:#e2e8f0;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 8px;font-size:11px;margin-bottom:10px;"><option value="">&#8212; Select &#8212;</option>${optHTML}</select>
+        <div style="margin-bottom:10px;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:6px;">
+          <div style="font-size:9px;color:#64748b;text-transform:uppercase;">Active</div>
+          <div id="oa-ac-rname" style="font-size:11px;color:#d4af37;">${saved.recipeName||'None'}</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <div style="flex:1;padding:5px 8px;background:rgba(0,0,0,.3);border-radius:6px;">
+            <div style="font-size:9px;color:#64748b;">Queue</div>
+            <div id="oa-ac-queue" style="font-size:11px;color:#94a3b8;">&#8212;</div>
+          </div>
+          <div style="flex:1;padding:5px 8px;background:rgba(0,0,0,.3);border-radius:6px;">
+            <div style="font-size:9px;color:#64748b;">State</div>
+            <div id="oa-ac-badge" style="font-size:11px;color:#94a3b8;">Idle</div>
+          </div>
+        </div>
+        <div id="oa-ac-status" style="font-size:10px;color:#94a3b8;min-height:15px;margin-bottom:10px;">Press Start to begin</div>
+        <button id="oa-ac-toggle" style="width:100%;padding:7px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:rgba(22,163,74,.85);color:#fff;">&#9654; Start</button>
+        <div style="margin-top:8px;font-size:9px;color:rgba(100,116,139,.6);border-top:1px solid rgba(255,255,255,.06);padding-top:8px;">No page reloads — combat farms while crafting</div>
+      </div>`;
+    document.body.appendChild(panel);
+
+    _statusEl=panel.querySelector('#oa-ac-status');
+    _loopEl  =panel.querySelector('#oa-ac-loop');
+    _queueEl =panel.querySelector('#oa-ac-queue');
+    const badgeEl=panel.querySelector('#oa-ac-badge'),rnameEl=panel.querySelector('#oa-ac-rname'),toggleBtn=panel.querySelector('#oa-ac-toggle');
+
+    setInterval(()=>{
+      if(badgeEl) badgeEl.textContent=running?'Running':'Idle';
+      if(_loopEl) _loopEl.textContent='Loops: '+loopsCompleted;
+      updateDisplay(parseQueue(document));
+    },1500);
+
+    panel.querySelector('#oa-ac-sel').addEventListener('change',e=>{
+      const o=e.target.options[e.target.selectedIndex];
+      if(!o.value) return;
+      if(rnameEl) rnameEl.textContent=o.text.trim();
+      savePref({recipeId:o.value,craftTab:o.dataset.craftTab||'armor',rarity:o.dataset.rarity||'all',recipeName:o.text.trim()});
+    });
+
+    function startRunning() {
+      if(!loadSaved().recipeId){setStatus('Select a recipe first!');return;}
+      try { localStorage.setItem(ENABLED_KEY,'1'); } catch {}
+      running=true; loopsCompleted=0;
+      toggleBtn.textContent='\u25a0 Stop';
+      toggleBtn.style.background='rgba(220,38,38,.85)';
+      setStatus('Starting...');
+      runLoop();
+    }
+
+    toggleBtn.addEventListener('click',()=>{
+      if(running){
+        running=false;
+        if(pollTimer){clearTimeout(pollTimer);pollTimer=null;}
+        try { localStorage.removeItem(ENABLED_KEY); } catch {}
+        try { localStorage.removeItem(COMBAT_MODE_KEY); } catch {}
+        clearReturnAlarm(); clearReturning();
+        toggleBtn.textContent='\u25b6 Start';
+        toggleBtn.style.background='rgba(22,163,74,.85)';
+        setStatus('Stopped');
+      } else startRunning();
+    });
+
+    panel._startRunning=startRunning;
+
+    let col=false;
+    panel.querySelector('#oa-ac-col').addEventListener('click',()=>{
+      col=!col;
+      panel.querySelector('#oa-ac-body').style.display=col?'none':'';
+      panel.querySelector('#oa-ac-col').textContent=col?'+':'\u2212';
+    });
+  }
+
+  // ── Bootstrap ─────────────────────────────────────────────────────────────
+  function init() {
+    if (onCraftingTab()) {
+      buildUI();
+      updateDisplay(parseQueue(document));
+      const userEnabled = (() => { try { return localStorage.getItem(ENABLED_KEY) === '1'; } catch { return false; } })();
+      if (isReturning() && userEnabled) {
+        clearReturning();
+        clearReturnAlarm();
+        if (loadSaved().recipeId) {
+          LOG('Returned from combat — resuming');
+          const panel=document.getElementById('oa-autocraft-panel');
+          if(panel?._startRunning) setTimeout(panel._startRunning, 1000+Math.random()*400);
+        }
+      } else if (isReturning()) {
+        // User stopped it while we were on combat tab — clean up flags but don't resume
+        clearReturning();
+        clearReturnAlarm();
+        try { localStorage.removeItem(COMBAT_MODE_KEY); } catch {}
+        LOG('Not resuming — user disabled autocraft');
+      }
+    } else if (onCombatTab()) {
+      initCombatWatcher();
+    }
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+  else setTimeout(init, 500+Math.random()*200);
+
+})();
+
+// ===== OA Drop Rate Scanner =====
+// Observes combat log for kills/drops per mob, 100 kills each, then advances to next mob.
+// Reads current plane from oa_last_plane_cache_v1. Salvages on inventory full.
+// Paste inside your main userscript IIFE, or include as standalone.
+
+(function initDropRateModule() {
+  'use strict';
+
+  const DATA_KEY   = 'oa_droprate_data_v1';  // { plane: { mobId: { name, kills, drops } } }
+  const STATE_KEY  = 'oa_droprate_state_v1'; // { running, plane, mobIndex }
+  const KILLS_GOAL = 100;
+  const LOG        = (...a) => console.log('[DropRate]', ...a);
+
+  // ── Persistence ─────────────────────────────────────────────────────────────
+  function loadData()  { try { return JSON.parse(localStorage.getItem(DATA_KEY)  || '{}'); } catch { return {}; } }
+  function saveData(d) { try { localStorage.setItem(DATA_KEY,  JSON.stringify(d)); } catch {} }
+  function loadState() { try { return JSON.parse(localStorage.getItem(STATE_KEY) || 'null'); } catch { return null; } }
+  function saveState(s){ try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch {} }
+  function clearState(){ try { localStorage.removeItem(STATE_KEY); } catch {} }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  function getCurrentPlane() {
+    try { const v = localStorage.getItem('oa_last_plane_cache_v1'); if (v && v.trim()) return v.trim(); } catch {}
+    // Fallback: combat_api current_plane (we already fetched it on load via the existing script)
+    try { return window.__combatState?.currentPlane || 'unknown'; } catch {}
+    return 'unknown';
+  }
+
+  function getMobOptions() {
+    const sel = document.getElementById('monster-select');
+    if (!sel) return [];
+    return Array.from(sel.options)
+      .filter(o => o.value && o.value !== '0' && o.getAttribute('data-monster-option') === '1' && !o.disabled)
+      .map(o => ({ id: o.value, name: parseMobName(o.textContent) }));
+  }
+
+  function parseMobName(text) {
+    // Strip "[300/300]" HP tags and "(Lvl X)" suffixes
+    return text.replace(/\s*\[[\d/]+\]\s*/g, '').replace(/\s*\(Lvl\s*\d+\)\s*/gi, '').trim();
+  }
+
+  function getCurrentMobId() {
+    const sel = document.getElementById('monster-select');
+    return sel ? sel.value : null;
+  }
+
+  // Use the Beast HUD's built-in "Fight #" pin so the existing script enforces
+  // the right mob for us (beasts still take priority as the tooltip notes).
+  // The Fight # input is 1-based; our scanMobList is 0-based.
+  function pinMobByIndex(zeroBasedIndex) {
+    // Find the Fight # number input in the HUD
+    const numInput = (() => {
+      for (const el of document.querySelectorAll('input[type="number"]')) {
+        if (el.placeholder && /1.*2.*3/i.test(el.placeholder)) return el;
+        const row = el.closest('div');
+        if (row && row.textContent.includes('Fight #')) return el;
+      }
+      return null;
+    })();
+
+    if (!numInput) {
+      LOG('Fight # input not found — falling back to direct select');
+      return pinMobDirect(zeroBasedIndex);
+    }
+
+    const fightNum = zeroBasedIndex + 1; // convert to 1-based
+    numInput.value = String(fightNum);
+    numInput.dispatchEvent(new Event('input',  { bubbles: true }));
+    numInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // Find and click the adjacent Pin button
+    const row = numInput.closest('div');
+    const pinBtn = row && Array.from(row.querySelectorAll('button')).find(b =>
+      b.textContent.trim() === 'Pin' || b.title?.toLowerCase().includes('pin this')
+    );
+
+    if (pinBtn) {
+      pinBtn.click();
+      LOG(`Pinned via HUD Fight #${fightNum}`);
+    } else {
+      LOG('Pin button not found — falling back');
+      pinMobDirect(zeroBasedIndex);
+    }
+  }
+
+  // Fallback: directly set monster-select (less reliable, existing script may override)
+  function pinMobDirect(zeroBasedIndex) {
+    const sel = document.getElementById('monster-select');
+    if (!sel) return;
+    const mob = scanMobList[zeroBasedIndex];
+    if (!mob) return;
+    sel.value = mob.id;
+    sel.dispatchEvent(new Event('input',  { bubbles: true }));
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    LOG(`Direct-selected mob ${mob.id}`);
+  }
+
+  // Clear the HUD pin when scan stops so normal autocombat resumes
+  function clearHudPin() {
+    const row = (() => {
+      for (const el of document.querySelectorAll('input[type="number"]')) {
+        if (el.placeholder && /1.*2.*3/i.test(el.placeholder)) return el.closest('div');
+        const r = el.closest('div');
+        if (r && r.textContent.includes('Fight #')) return r;
+      }
+      return null;
+    })();
+    if (!row) return;
+    const clearBtn = Array.from(row.querySelectorAll('button')).find(b =>
+      b.textContent.trim() === '✕' || b.title?.toLowerCase().includes('clear pin')
+    );
+    if (clearBtn) { clearBtn.click(); LOG('HUD pin cleared'); }
+  }
+
+  // No-op stubs so existing call sites don't break
+  function startEnforcer() {}
+  function stopEnforcer()  {}
+
+  function selectMob(mobId) {
+    const idx = scanMobList.findIndex(m => m.id === mobId);
+    if (idx >= 0) pinMobByIndex(idx);
+    LOG(`selectMob → index ${idx} id ${mobId}`);
+    return true;
+  }
+
+  function ensurePlaneEntry(data, plane) {
+    if (!data[plane]) data[plane] = {};
+    return data[plane];
+  }
+
+  function ensureMobEntry(planeData, mobId, name) {
+    if (!planeData[mobId]) planeData[mobId] = { name, kills: 0, drops: 0 };
+    else if (name && planeData[mobId].name !== name) planeData[mobId].name = name; // keep name fresh
+    return planeData[mobId];
+  }
+
+  function pct(mob) {
+    if (!mob || !mob.kills) return 0;
+    return (mob.drops / mob.kills) * 100;
+  }
+
+  // ── Scanner state ────────────────────────────────────────────────────────────
+  let scanning     = false;
+  let scanPlane    = '';
+  let scanMobList  = [];   // [{id, name}] snapshot at scan start
+  let scanMobIndex = 0;
+  let obs          = null; // MutationObserver
+  let _panel       = null;
+
+  function setStatus(msg) {
+    LOG(msg);
+    const el = document.getElementById('oa-dr-status');
+    if (el) el.textContent = msg;
+  }
+
+  function updateProgressUI() {
+    const data  = loadData();
+    const state = loadState();
+
+    // Update the fight number pin display
+    const pinEl = document.getElementById('oa-dr-fight-num');
+    if (pinEl) {
+      if (state && scanMobList.length > 0) {
+        pinEl.textContent = `#${scanMobIndex + 1} / ${scanMobList.length}`;
+        pinEl.style.color = '#d4af37';
+      } else {
+        pinEl.textContent = '—';
+        pinEl.style.color = '#64748b';
+      }
+    }
+
+    if (!state) return;
+    const plane = state.plane;
+    const pd    = data[plane] || {};
+
+    const mob   = scanMobList[scanMobIndex];
+    if (!mob) return;
+    const entry = pd[mob.id];
+    const kills = entry ? entry.kills : 0;
+
+    const pEl = document.getElementById('oa-dr-progress');
+    if (pEl) {
+      pEl.textContent = `${mob.name} — ${kills}/${KILLS_GOAL} kills`;
+    }
+  }
+
+  // ── Core: advance to next mob ────────────────────────────────────────────────
+  function advanceToNextMob() {
+    scanMobIndex++;
+    if (scanMobIndex >= scanMobList.length) {
+      // Done all mobs on this plane
+      setStatus(`Scan complete for plane: ${scanPlane}`);
+      scanning = false;
+      clearState();
+      stopObserver();
+      renderResults();
+      updateToggleBtn();
+      return;
+    }
+    const next = scanMobList[scanMobIndex];
+    saveState({ running: true, plane: scanPlane, mobIndex: scanMobIndex });
+    setStatus(`Moving to: ${next.name} (${scanMobIndex + 1}/${scanMobList.length})`);
+    // Small delay so autocombat finishes current fight
+    setTimeout(() => {
+      processedBatches = new Set();
+      const logEl  = document.getElementById('combat-log');
+      const chatEl = document.getElementById('chat-messages');
+      if (logEl)  { lastCombatHtml = logEl.innerHTML; processedBatches.add(simpleHash(lastCombatHtml)); }
+      if (chatEl) {
+        let max = 0;
+        for (const div of chatEl.querySelectorAll('[data-message-id]')) {
+          const id = parseInt(div.getAttribute('data-message-id') || '0', 10);
+          if (id > max) max = id;
+        }
+        lastSeenMsgId = max;
+      }
+      selectMob(next.id);
+      startEnforcer();
+      updateProgressUI();
+    }, 1500);
+  }
+
+  // ── Salvage on inventory full ────────────────────────────────────────────────
+  function doSalvageAll() {
+    // Navigate to inventory tab and click salvage all
+    const salvageUrl = '/game.php?tab=inventory';
+    setStatus('Inventory full — salvaging...');
+    scanning = false; // pause observer temporarily
+    stopObserver();
+
+    // Do it via fetch so we don't leave the combat page
+    fetch(salvageUrl, { credentials: 'include' })
+      .then(r => r.text())
+      .then(html => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const btn = doc.querySelector('button[value="salvage_all_items"]');
+        if (!btn) {
+          LOG('No salvage button found on inventory page');
+          resumeScanning();
+          return;
+        }
+        const form = btn.closest('form');
+        if (!form) { resumeScanning(); return; }
+        const params = new URLSearchParams();
+        for (const el of form.elements) {
+          if (!el.name || el.disabled) continue;
+          params.append(el.name, el.value);
+        }
+        params.set(btn.name || 'action', btn.value);
+        return fetch('/game.php?tab=inventory', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString(),
+        });
+      })
+      .then(() => {
+        LOG('Salvage done');
+        setStatus('Salvaged — resuming scan...');
+        setTimeout(resumeScanning, 1000);
+      })
+      .catch(e => {
+        LOG('Salvage error:', e);
+        resumeScanning();
+      });
+  }
+
+  function resumeScanning() {
+    if (!scanning) {
+      scanning = true;
+      startObserver();
+      updateProgressUI();
+    }
+  }
+
+  // ── Observers: combat-log for kills, chat-messages for drops ────────────────
+  // Kills: combat-log replaces innerHTML wholesale each fight — hash-deduplicate.
+  // Drops: chat-messages appends new [data-message-id] divs — track highest ID seen.
+
+  let processedBatches = new Set();
+  let lastCombatHtml   = '';
+  let lastSeenMsgId    = 0;
+  let chatObs          = null;
+
+  function simpleHash(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+    return h;
+  }
+
+  // ── Kill tracking (combat-log) ───────────────────────────────────────────────
+  function processCombatLog(logEl) {
+    if (!scanning) return;
+    const html = logEl.innerHTML;
+    if (html === lastCombatHtml) return;
+    lastCombatHtml = html;
+
+    const batchId = simpleHash(html);
+    if (processedBatches.has(batchId)) return;
+    processedBatches.add(batchId);
+    if (processedBatches.size > 200) processedBatches = new Set([...processedBatches].slice(-100));
+
+    const lines = Array.from(logEl.querySelectorAll('.log-line'));
+    for (const node of lines) {
+      const type = node.getAttribute('data-log-type') || '';
+      const text = (node.textContent || '').trim();
+
+      if (/inventory full/i.test(text)) {
+        LOG('Inventory full (combat log)');
+        doSalvageAll();
+        return;
+      }
+
+      const mob = scanMobList[scanMobIndex];
+      if (!mob) continue;
+
+      if (type === 'monster-defeated') {
+        const data  = loadData();
+        const pd    = ensurePlaneEntry(data, scanPlane);
+        const entry = ensureMobEntry(pd, mob.id, mob.name);
+        entry.kills++;
+        saveData(data);
+        LOG(`Kill ${entry.kills}/${KILLS_GOAL} for ${mob.name}`);
+        updateProgressUI();
+        if (entry.kills >= KILLS_GOAL) {
+          LOG(`${mob.name} done — advancing`);
+          advanceToNextMob();
+        }
+      }
+    }
+  }
+
+  // ── Drop tracking (chat-messages) ───────────────────────────────────────────
+  function processChatNode(node) {
+    if (!scanning) return;
+    if (node.nodeType !== 1) return;
+
+    // Handle both direct message divs and container replacements
+    const msgDivs = node.hasAttribute && node.hasAttribute('data-message-id')
+      ? [node]
+      : Array.from(node.querySelectorAll ? node.querySelectorAll('[data-message-id]') : []);
+
+    for (const div of msgDivs) {
+      const msgId = parseInt(div.getAttribute('data-message-id') || '0', 10);
+      if (!msgId || msgId <= lastSeenMsgId) continue;
+      lastSeenMsgId = Math.max(lastSeenMsgId, msgId);
+
+      const text = (div.textContent || '').trim();
+
+      if (/inventory full/i.test(text)) {
+        LOG('Inventory full (chat)');
+        doSalvageAll();
+        return;
+      }
+
+      if (/^you find a /i.test(text)) {
+        const mob = scanMobList[scanMobIndex];
+        if (!mob) continue;
+        const data  = loadData();
+        const pd    = ensurePlaneEntry(data, scanPlane);
+        const entry = ensureMobEntry(pd, mob.id, mob.name);
+        if (entry.kills > 0) {
+          entry.drops++;
+          saveData(data);
+          LOG(`Drop for ${mob.name}: "${text}" (${entry.drops} total)`);
+        }
+      }
+    }
+  }
+
+  function startObserver() {
+    // ── Combat log observer (kills) ──────────────────────────────────────────
+    const logEl = document.getElementById('combat-log');
+    if (logEl && !obs) {
+      lastCombatHtml = logEl.innerHTML;
+      processedBatches.add(simpleHash(lastCombatHtml));
+      obs = new MutationObserver(() => processCombatLog(logEl));
+      obs.observe(logEl, { childList: true, subtree: true });
+      LOG('Combat log observer started');
+    }
+
+    // ── Chat messages observer (drops) ───────────────────────────────────────
+    const chatEl = document.getElementById('chat-messages');
+    if (chatEl && !chatObs) {
+      // Seed lastSeenMsgId from current messages so we don't count history
+      const existing = chatEl.querySelectorAll('[data-message-id]');
+      for (const div of existing) {
+        const id = parseInt(div.getAttribute('data-message-id') || '0', 10);
+        if (id > lastSeenMsgId) lastSeenMsgId = id;
+      }
+      LOG(`Chat observer started — seeded lastSeenMsgId=${lastSeenMsgId}`);
+
+      chatObs = new MutationObserver(mutations => {
+        for (const mut of mutations) {
+          for (const node of mut.addedNodes) processChatNode(node);
+        }
+      });
+      chatObs.observe(chatEl, { childList: true, subtree: true });
+    } else if (!chatEl) {
+      LOG('No #chat-messages found — drops will not be tracked');
+    }
+  }
+
+  function stopObserver() {
+    if (obs)     { obs.disconnect();     obs     = null; }
+    if (chatObs) { chatObs.disconnect(); chatObs = null; }
+    stopEnforcer();
+  }
+
+  // ── Start / stop scan ────────────────────────────────────────────────────────
+  function startScan() {
+    const mobs = getMobOptions();
+    if (mobs.length === 0) { setStatus('No mobs available in monster-select'); return; }
+
+    scanPlane    = getCurrentPlane();
+    scanMobList  = mobs;
+    scanMobIndex = 0;
+
+    // Resume from saved state if same plane
+    const saved = loadState();
+    if (saved && saved.plane === scanPlane && saved.mobIndex < mobs.length) {
+      scanMobIndex = saved.mobIndex;
+      LOG('Resuming scan from mob', scanMobIndex);
+    }
+
+    scanning = true;
+    saveState({ running: true, plane: scanPlane, mobIndex: scanMobIndex });
+
+    const mob = scanMobList[scanMobIndex];
+    selectMob(mob.id);
+    startEnforcer();
+    setStatus(`Scanning ${scanPlane} — mob ${scanMobIndex + 1}/${scanMobList.length}: ${mob.name}`);
+    updateProgressUI();
+    startObserver();
+    renderResults();
+    updateToggleBtn();
+  }
+
+  function stopScan() {
+    scanning = false;
+    stopObserver();
+    clearHudPin();
+    clearState();
+    setStatus('Scan stopped');
+    updateToggleBtn();
+  }
+
+  function updateToggleBtn() {
+    const btn = document.getElementById('oa-dr-toggle');
+    if (!btn) return;
+    btn.textContent  = scanning ? '⏹ Stop Scan' : '▶ Start Scan';
+    btn.style.background = scanning ? 'rgba(220,38,38,.85)' : 'rgba(22,163,74,.85)';
+  }
+
+  // ── Results visual ───────────────────────────────────────────────────────────
+  function renderResults() {
+    const container = document.getElementById('oa-dr-results');
+    if (!container) return;
+
+    const data = loadData();
+    if (Object.keys(data).length === 0) {
+      container.innerHTML = '<div style="color:#64748b;font-size:10px;text-align:center;padding:8px;">No data yet</div>';
+      return;
+    }
+
+    let html = '';
+    for (const [plane, mobs] of Object.entries(data)) {
+      const mobEntries = Object.values(mobs).filter(m => m.kills > 0);
+      if (mobEntries.length === 0) continue;
+
+      // Sort by drop rate desc
+      mobEntries.sort((a, b) => pct(b) - pct(a));
+      const maxPct = pct(mobEntries[0]) || 1;
+
+      html += `<div style="margin-bottom:12px;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#d4af37;margin-bottom:6px;border-bottom:1px solid rgba(212,175,55,.3);padding-bottom:3px;">
+          ${plane}
+        </div>`;
+
+      for (const mob of mobEntries) {
+        const rate      = pct(mob);
+        const barWidth  = maxPct > 0 ? (rate / maxPct) * 100 : 0;
+        const incomplete = mob.kills < KILLS_GOAL;
+        const color     = rate > 50 ? '#4ade80' : rate > 20 ? '#fbbf24' : rate > 0 ? '#f87171' : '#475569';
+        const alpha     = incomplete ? '0.5' : '1';
+
+        html += `<div style="margin-bottom:5px;opacity:${alpha};">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#cbd5e1;margin-bottom:2px;">
+            <span>${mob.name}${incomplete ? ` <span style="color:#64748b">(${mob.kills}/${KILLS_GOAL})</span>` : ''}</span>
+            <span style="color:${color};font-weight:600;">${rate.toFixed(1)}%</span>
+          </div>
+          <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${barWidth}%;background:${color};border-radius:2px;transition:width .4s;"></div>
+          </div>
+        </div>`;
+      }
+
+      html += '</div>';
+    }
+
+    container.innerHTML = html || '<div style="color:#64748b;font-size:10px;text-align:center;padding:8px;">No data yet</div>';
+  }
+
+  // ── UI ───────────────────────────────────────────────────────────────────────
+  function buildPanel() {
+    document.getElementById('oa-droprate-panel')?.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'oa-droprate-panel';
+    panel.style.cssText = [
+      'position:fixed;top:16px;left:16px;z-index:2147483639',
+      'background:rgba(6,8,20,0.97)',
+      'border:1px solid rgba(212,175,55,.45)',
+      'border-radius:12px;padding:14px 16px',
+      'color:#e2e8f0;font-family:Cinzel,Georgia,serif;font-size:12px',
+      'width:280px;max-height:80vh',
+      'box-shadow:0 6px 32px rgba(0,0,0,.8)',
+      'display:flex;flex-direction:column;gap:8px',
+      'user-select:none',
+    ].join(';');
+
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-weight:700;color:#d4af37;font-size:13px;">⚔ Drop Rate Scanner</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button id="oa-dr-clear" title="Clear data" style="background:none;border:1px solid rgba(255,255,255,.15);color:#64748b;cursor:pointer;font-size:9px;border-radius:4px;padding:2px 6px;">Clear</button>
+          <button id="oa-dr-col" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:0 2px;">&minus;</button>
+        </div>
+      </div>
+      <div id="oa-dr-body" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+          <div id="oa-dr-status" style="font-size:10px;color:#94a3b8;flex:1;">Press Start to begin scanning mobs</div>
+          <div style="display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.4);border:1px solid rgba(212,175,55,.3);border-radius:6px;padding:3px 8px;white-space:nowrap;">
+            <span style="font-size:9px;color:#64748b;">Fight#</span>
+            <span id="oa-dr-fight-num" style="font-size:11px;font-weight:700;color:#64748b;">—</span>
+          </div>
+        </div>
+        <div id="oa-dr-progress" style="font-size:10px;color:#64748b;"></div>
+        <button id="oa-dr-toggle" style="width:100%;padding:7px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:rgba(22,163,74,.85);color:#fff;">▶ Start Scan</button>
+        <div style="font-size:9px;color:rgba(100,116,139,.5);border-top:1px solid rgba(255,255,255,.06);padding-top:6px;">
+          Kills goal: ${KILLS_GOAL} per mob · Auto-salvages on full inventory
+        </div>
+        <div id="oa-dr-results" style="overflow-y:auto;max-height:50vh;padding-right:2px;">
+          <div style="color:#64748b;font-size:10px;text-align:center;padding:8px;">No data yet</div>
+        </div>
+      </div>`;
+
+    document.body.appendChild(panel);
+    _panel = panel;
+
+    panel.querySelector('#oa-dr-toggle').addEventListener('click', () => {
+      if (scanning) stopScan(); else startScan();
+    });
+
+    panel.querySelector('#oa-dr-clear').addEventListener('click', () => {
+      if (!confirm('Clear all drop rate data?')) return;
+      saveData({});
+      clearState();
+      renderResults();
+      setStatus('Data cleared');
+    });
+
+    let collapsed = false;
+    panel.querySelector('#oa-dr-col').addEventListener('click', () => {
+      collapsed = !collapsed;
+      panel.querySelector('#oa-dr-body').style.display = collapsed ? 'none' : 'flex';
+      panel.querySelector('#oa-dr-col').textContent = collapsed ? '+' : '−';
+    });
+
+    // Refresh results display every 2s while scanning
+    setInterval(() => {
+      if (scanning) { renderResults(); updateProgressUI(); }
+    }, 2000);
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  function init() {
+    if (new URLSearchParams(window.location.search).get('tab') !== 'combat') return;
+    buildPanel();
+    renderResults();
+
+    // Auto-resume if a scan was in progress
+    const saved = loadState();
+    if (saved && saved.running) {
+      LOG('Auto-resuming scan for plane', saved.plane);
+      setTimeout(() => {
+        // Wait for combat page to fully load before starting
+        const mobs = getMobOptions();
+        if (mobs.length > 0) startScan();
+        else {
+          setStatus('Waiting for monster list...');
+          const wait = setInterval(() => {
+            if (getMobOptions().length > 0) { clearInterval(wait); startScan(); }
+          }, 1000);
+        }
+      }, 2000);
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else setTimeout(init, 600 + Math.random() * 200);
+
+})();
+
+
 
 })();
