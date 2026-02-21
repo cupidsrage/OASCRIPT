@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         OA AutoCombat + Last Beast HUD + CapSolver (Stealth Mode)
 // @namespace    http://tampermonkey.net/
-// @version      6.9.83
+// @version      6.9.84
 // @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.83: Added Tampermonkey @updateURL/@downloadURL metadata for automatic updates
 // @description  Auto-combat (F1), Last Beast teleport (F2), CapSolver auto-solve - v6.9.77: FIX - Added WAIT_MOVE phase with 200ms delay + position verification - v6.9.58: ⚔️ Auto: ON/OFF button in game header - click to toggle, syncs with F1
 // @author       You
