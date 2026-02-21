@@ -1529,6 +1529,11 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
   let lastSecurityCheckWasAuto = false;
   let securityCheckWasVisible = false;
   let lastCapSolverAttemptHistory = null;
+  let lastSecurityCheckContext = null;
+  const capSolverRecoveryStateByModal = new WeakMap();
+  const CAPSOLVER_RECOVERY_LIMIT = 1;
+  const CAPSOLVER_RECOVERY_COOLDOWN_MS = 15000;
+  let capSolverOneShotOverride = null;
 
   function recordSecurityCheckAttempt(answer, isAuto) {
     lastSecurityCheckAnswer = answer;
@@ -1540,9 +1545,107 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     saveCapSolverStats(stats);
   }
 
-  function recordSecurityCheckResult(passed) {
+  function classifyBotcheckPromptPattern(modalText) {
+    const text = String(modalText || '');
+    const lower = text.toLowerCase();
+    if (/enter\s+(?:the\s+)?(?:full\s+)?6[- ]?character\s+code/i.test(text) ||
+        /enter\s+(?:the\s+)?(?:full\s+)?code\s+shown/i.test(text) ||
+        /(?:entire|complete|whole|full)\s+(?:code|captcha)/i.test(text)) return 'full_code';
+    if (/(\d)(?:st|nd|rd|th)\s+character/i.test(text)) return 'ordinal_single';
+    if (/characters?\s+[\d,\sand]+/i.test(text)) return 'multi_positions';
+    if (/(first|second|third|fourth|fifth|sixth)\s+character/i.test(lower)) return 'word_positions';
+    if (/character\s*#?\s*\d/i.test(text)) return 'character_number';
+    return 'unknown';
+  }
+
+  function captureBotcheckContext(modal, optionProfile, preprocessProfile) {
+    const modalText = modal?.textContent || modal?.innerText || '';
+    const timerEl = modal?.querySelector?.('[data-botcheck-timer], .botcheck-timer, [class*="timer"]');
+    return {
+      timerVisible: !!timerEl,
+      timerText: timerEl?.textContent?.trim?.() || '',
+      promptPattern: classifyBotcheckPromptPattern(modalText),
+      optionProfile: optionProfile || null,
+      preprocessProfile: preprocessProfile || null,
+      capturedAt: Date.now()
+    };
+  }
+
+  function buildRecoveryOverride(context) {
+    const prevProfile = String(context?.preprocessProfile || 'auto').toLowerCase();
+    const alternateProfile = prevProfile === 'raw' ? 'high_contrast' : 'raw';
+    const previousScore = Number(context?.optionProfile?.score);
+    const adjustedScore = Number.isFinite(previousScore) ? Math.max(0.75, previousScore - 0.1) : 0.8;
+    return {
+      profile: alternateProfile,
+      optionOverrides: { score: adjustedScore },
+      variation: `recovery_${alternateProfile}_score_${String(adjustedScore).replace('.', '_')}`
+    };
+  }
+
+  async function waitForBotcheckImageRefresh(captchaImg, previousSrc) {
+    const started = Date.now();
+    while (Date.now() - started < 8000) {
+      const srcChanged = captchaImg?.src && captchaImg.src !== previousSrc;
+      const loaded = captchaImg?.complete && captchaImg?.naturalWidth > 0 && captchaImg?.naturalHeight > 0;
+      if (srcChanged && loaded) return true;
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    return false;
+  }
+
+  async function triggerBotcheckRecoveryOnReject(reason = 'unknown_reject', context = null, wasAuto = false) {
+    if (!wasAuto) return;
+    const modal = document.getElementById('botcheck-modal');
+    if (!modal || !modal.classList.contains('flex')) return;
+
+    const state = capSolverRecoveryStateByModal.get(modal) || { attempts: 0, cooldownUntil: 0 };
+    const now = Date.now();
+    if (state.attempts >= CAPSOLVER_RECOVERY_LIMIT) {
+      console.log('[CapSolver-Recovery] Skip: retry limit reached for modal');
+      return;
+    }
+    if (state.cooldownUntil > now) {
+      console.log('[CapSolver-Recovery] Skip: cooldown active for modal');
+      return;
+    }
+
+    const refreshBtn = modal.querySelector('[data-botcheck-refresh]');
+    const captchaImg = modal.querySelector('[data-botcheck-image]');
+    if (!refreshBtn || !captchaImg) {
+      console.log('[CapSolver-Recovery] Skip: refresh controls unavailable');
+      return;
+    }
+
+    const previousSrc = captchaImg.src;
+    state.attempts += 1;
+    state.cooldownUntil = now + CAPSOLVER_RECOVERY_COOLDOWN_MS;
+    capSolverRecoveryStateByModal.set(modal, state);
+
+    try {
+      refreshBtn.click();
+      const refreshed = await waitForBotcheckImageRefresh(captchaImg, previousSrc);
+      if (!refreshed) {
+        console.log('[CapSolver-Recovery] Refresh timeout waiting for new image');
+        return;
+      }
+
+      const override = buildRecoveryOverride(context);
+      capSolverOneShotOverride = override;
+      capSolverLastAttempt = 0;
+      console.log('[CapSolver-Recovery] Retrying with override:', override, 'reason:', reason);
+      await autoSolveWithCapSolver();
+    } catch (e) {
+      console.log('[CapSolver-Recovery] Recovery failed:', e);
+    }
+  }
+
+  function recordSecurityCheckResult(passed, rejectionReason = null) {
     // Prevent double-recording (both fetch interceptor and MutationObserver may fire)
     if (lastSecurityCheckTime === 0) return;
+
+    const attemptContextSnapshot = lastSecurityCheckContext ? { ...lastSecurityCheckContext } : null;
+    const wasAutoAttempt = !!lastSecurityCheckWasAuto;
 
     const stats = loadCapSolverStats();
     const timeTaken = Date.now() - lastSecurityCheckTime;
@@ -1614,11 +1717,17 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
       time: timeTaken,
       capSolverAttempts: Array.isArray(lastCapSolverAttemptHistory) ? lastCapSolverAttemptHistory : undefined,
       capSolverAttemptCount: Array.isArray(lastCapSolverAttemptHistory) ? lastCapSolverAttemptHistory.length : undefined,
+      rejectionReason: passed ? undefined : (rejectionReason || 'unknown_reject'),
+      rejectionContext: attemptContextSnapshot || undefined,
       at: Date.now()
     });
     if (stats.history.length > 20) stats.history.length = 20;
 
     saveCapSolverStats(stats);
+
+    if (!passed && wasAutoAttempt) {
+      triggerBotcheckRecoveryOnReject(rejectionReason || 'unknown_reject', attemptContextSnapshot, wasAutoAttempt);
+    }
 
     // Reset ALL tracking
     lastSecurityCheckAnswer = '';
@@ -1629,6 +1738,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     lastSCFullSolution = '';
     lastSCPositions = null;
     lastCapSolverAttemptHistory = null;
+    lastSecurityCheckContext = null;
   }
 
   function recordManualSecurityCheck() {
@@ -1653,7 +1763,7 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
 
         if (isVisible && lastSecurityCheckTime > 0) {
           // Error appeared - solution was rejected
-          recordSecurityCheckResult(false);
+          recordSecurityCheckResult(false, 'modal_error_visible');
         }
       });
 
@@ -1672,10 +1782,14 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
 
       if (wasVisible && !isVisible && lastSecurityCheckTime > 0) {
         // Modal closed after we submitted - solution was accepted
-        recordSecurityCheckResult(true);
+        recordSecurityCheckResult(true, null);
       } else if (wasVisible && !isVisible && lastSecurityCheckTime === 0) {
         // Modal closed but we didn't track an auto attempt - manual solve
         recordManualSecurityCheck();
+      }
+
+      if (!isVisible) {
+        capSolverRecoveryStateByModal.delete(modal);
       }
 
       securityCheckWasVisible = isVisible;
@@ -2288,17 +2402,17 @@ Respond with ONLY the analysis, no preamble.` }
             console.log('[ClaudeSC-Intercept] âŒ Server confirmed FAILURE');
             // If we have a pending auto-solve, record the failure with image
             if (lastSecurityCheckWasAuto && lastSecurityCheckTime > 0) {
-              recordSecurityCheckResult(false);
+              recordSecurityCheckResult(false, 'server_botcheck_failed');
             }
           } else if (data.botcheck_passed) {
             console.log('[ClaudeSC-Intercept] âœ… Server confirmed PASS');
             if (lastSecurityCheckTime > 0) {
-              recordSecurityCheckResult(true);
+              recordSecurityCheckResult(true, null);
             }
           } else if (data.error === 'botcheck_logout') {
             console.log('[ClaudeSC-Intercept] ðŸš¨ Botcheck logout!');
             if (lastSecurityCheckTime > 0) {
-              recordSecurityCheckResult(false);
+              recordSecurityCheckResult(false, 'server_botcheck_logout');
             }
           }
         }).catch(() => {});
@@ -2820,6 +2934,16 @@ Respond with ONLY the analysis, no preamble.` }
         { profile: 'auto', optionOverrides: { score: 0.85 }, variation: 'retry_score_0_85' }
       ];
 
+      if (capSolverOneShotOverride) {
+        attemptPlans.unshift({
+          profile: capSolverOneShotOverride.profile || 'raw',
+          optionOverrides: { ...(capSolverOneShotOverride.optionOverrides || {}) },
+          variation: capSolverOneShotOverride.variation || 'recovery_override'
+        });
+        console.log('[CapSolver] Applying one-shot recovery override:', capSolverOneShotOverride);
+        capSolverOneShotOverride = null;
+      }
+
       const solver = new CapSolverClient();
 
       // CapSolver options for this captcha type
@@ -3094,6 +3218,9 @@ Respond with ONLY the analysis, no preamble.` }
       input.setAttribute('value', finalAnswer);
 
       console.log('[CapSolver] Solution entered:', finalAnswer, '| Input value now:', input.value);
+
+      const selectedPlan = attemptHistory.find(a => a && a.accepted) || attemptHistory[attemptHistory.length - 1] || null;
+      lastSecurityCheckContext = captureBotcheckContext(modal, selectedPlan?.options || baseOptions, selectedPlan?.profileResolved || selectedPlan?.profileRequested || null);
 
       // Track this attempt for pass/fail detection
       recordSecurityCheckAttempt(finalAnswer, true);
