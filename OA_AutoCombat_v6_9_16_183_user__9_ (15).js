@@ -6583,6 +6583,13 @@ function selectHighestLevelMonsterIfNeeded() {
     return;
   }
 
+  // Respect a valid current selection to prevent auto-jumping to pinned/highest targets.
+  // Only auto-select when the current option is missing/invalid/disabled.
+  const selectedVal = String(select.value || "");
+  const currentOpt = allOpts.find((opt) => String(opt?.value || "") === selectedVal);
+  if (currentOpt && !isDisabledOpt(currentOpt)) {
+    return;
+  }
 
   const beastOpts = allOpts.filter((opt) => {
     if (!opt || !opt.dataset) return false;
