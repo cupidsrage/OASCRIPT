@@ -6567,10 +6567,21 @@ function selectHighestLevelMonsterIfNeeded() {
     return;
   }
 
+  const isBeastOption = (opt) => {
+    if (!opt) return false;
+    const v = String(opt.value || "");
+    const beastAttr = String(opt.dataset?.beastOption || "").toLowerCase();
+    return (
+      v.startsWith("beast:") ||
+      beastAttr === "1" ||
+      beastAttr === "true" ||
+      opt.hasAttribute?.("data-beast-option")
+    );
+  };
+
   const beastOpts = allOpts.filter((opt) => {
     if (!opt || !opt.dataset) return false;
-    const v = String(opt.value || "");
-    const isBeast = opt.dataset.beastOption === "1" || v.startsWith("beast:");
+    const isBeast = isBeastOption(opt);
     if (!isBeast) return false;
     if (isDisabledOpt(opt)) return false;
 
@@ -6894,7 +6905,7 @@ const planeId = getPlaneIdSafe();
       console.log("[canStartSelectedFight] Selected:", val, "Text:", txtLabel);
 
       const isBeast = opt
-        ? (String(opt.value || "").startsWith("beast:") || opt.dataset?.beastOption === "1")
+        ? isBeastOption(opt)
         : val.startsWith("beast:");
 
       const looksInvalid =
@@ -6927,7 +6938,7 @@ selectHighestLevelMonsterIfNeeded(); } catch {}
 
         const opt2 = select.options?.[select.selectedIndex] || null;
         const isBeast2 = opt2
-          ? (String(opt2.value || "").startsWith("beast:") || opt2.dataset?.beastOption === "1")
+          ? isBeastOption(opt2)
           : String(select.value || "").startsWith("beast:");
 
         return isBeast2;
@@ -6969,7 +6980,7 @@ selectHighestLevelMonsterIfNeeded(); } catch {}
           const beastOpt = Array.from(select.options || []).find((o) => {
             if (!o || o.disabled) return false;
             const v = String(o.value || "");
-            const isBeast = v.startsWith("beast:") || o.dataset?.beastOption === "1";
+            const isBeast = isBeastOption(o);
             if (!isBeast) return false;
 
             const beastName = __oaExtractBeastNameFromOption(o);
