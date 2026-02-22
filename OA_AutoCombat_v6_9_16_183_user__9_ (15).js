@@ -6508,6 +6508,19 @@ try { window.OA_ResetBeastLimits = __oaResetBeastLimits; } catch {}
         return String(m?.[1] || txt).trim();
       } catch (e) { return ""; }
     }
+
+function isBeastOption(opt) {
+  if (!opt) return false;
+  const v = String(opt.value || "");
+  const beastAttr = String(opt.dataset?.beastOption || "").toLowerCase();
+  return (
+    v.startsWith("beast:") ||
+    beastAttr === "1" ||
+    beastAttr === "true" ||
+    opt.hasAttribute?.("data-beast-option")
+  );
+}
+
 function selectHighestLevelMonsterIfNeeded() {
   const cs = getCombatState();
   if (cs && cs.inCombat) return;
@@ -6567,17 +6580,6 @@ function selectHighestLevelMonsterIfNeeded() {
     return;
   }
 
-  const isBeastOption = (opt) => {
-    if (!opt) return false;
-    const v = String(opt.value || "");
-    const beastAttr = String(opt.dataset?.beastOption || "").toLowerCase();
-    return (
-      v.startsWith("beast:") ||
-      beastAttr === "1" ||
-      beastAttr === "true" ||
-      opt.hasAttribute?.("data-beast-option")
-    );
-  };
 
   const beastOpts = allOpts.filter((opt) => {
     if (!opt || !opt.dataset) return false;
