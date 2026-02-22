@@ -3474,10 +3474,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
         if (currentTab !== "combat") {
           // Check if there's actually a beast present before forcing back to combat
           const select = document.getElementById("monster-select");
-          const hasBeast = select && Array.from(select.options).some(opt => {
-            return opt.hasAttribute('data-beast-option') ||
-                   (opt.value && String(opt.value).match(/^beast:/i));
-          });
+          const hasBeast = select && Array.from(select.options).some((opt) => isBeastOption(opt));
 
           if (hasBeast) {
             url.searchParams.set("tab", "combat");
@@ -3516,10 +3513,7 @@ const BEAST_RETURN_KEY = "oa_beast_return_to_combat_v1";
               }
 
               // Look for beast option with data-beast-option attribute
-              const beastOption = Array.from(select.options).find(opt => {
-                return opt.hasAttribute('data-beast-option') ||
-                       (opt.value && String(opt.value).match(/^beast:/i));
-              });
+              const beastOption = Array.from(select.options).find((opt) => isBeastOption(opt));
 
               if (!beastOption) {
                 console.log("[AutoBeast] No beast option found yet, retrying... (attempt " + attempt + ")");
@@ -6513,11 +6507,15 @@ function isBeastOption(opt) {
   if (!opt) return false;
   const v = String(opt.value || "");
   const beastAttr = String(opt.dataset?.beastOption || "").toLowerCase();
+  const beastGroupId = String(opt.parentElement?.id || "").toLowerCase();
+  const beastGroupLabel = String(opt.parentElement?.label || "").toLowerCase();
   return (
     v.startsWith("beast:") ||
     beastAttr === "1" ||
     beastAttr === "true" ||
-    opt.hasAttribute?.("data-beast-option")
+    opt.hasAttribute?.("data-beast-option") ||
+    beastGroupId.includes("beast") ||
+    beastGroupLabel.includes("beast")
   );
 }
 
