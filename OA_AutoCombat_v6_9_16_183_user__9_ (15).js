@@ -6506,16 +6506,21 @@ try { window.OA_ResetBeastLimits = __oaResetBeastLimits; } catch {}
 function isBeastOption(opt) {
   if (!opt) return false;
   const v = String(opt.value || "");
+  const valueLower = v.toLowerCase();
   const beastAttr = String(opt.dataset?.beastOption || "").toLowerCase();
-  const beastGroupId = String(opt.parentElement?.id || "").toLowerCase();
-  const beastGroupLabel = String(opt.parentElement?.label || "").toLowerCase();
+  const beastGroup = opt.closest?.("optgroup") || opt.parentElement;
+  const beastGroupId = String(beastGroup?.id || "").toLowerCase();
+  const beastGroupLabel = String(beastGroup?.label || "").toLowerCase();
+  const label = String(opt.textContent || "").toLowerCase();
   return (
-    v.startsWith("beast:") ||
+    valueLower.startsWith("beast:") ||
     beastAttr === "1" ||
     beastAttr === "true" ||
+    beastAttr === "yes" ||
     opt.hasAttribute?.("data-beast-option") ||
     beastGroupId.includes("beast") ||
-    beastGroupLabel.includes("beast")
+    beastGroupLabel.includes("beast") ||
+    (/\[\s*\d+\s*\/\s*\d+\s*\]/.test(label) && beastGroupLabel.includes("nearby"))
   );
 }
 
