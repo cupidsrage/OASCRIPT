@@ -6333,15 +6333,26 @@ function applyPanelLayoutIfNeeded() {
     const __OA_BEAST_LIMIT_STORE_KEY = "oa_beast_weekly_limits_v1";
 
     // Server-day/week keys (prefer in-game server time if available)
+    let __oaServerClockBaseEpochMs = 0;
+    let __oaServerClockBaseClientMs = 0;
     function __oaGetServerNowMs() {
       try {
         const st = document.querySelector("#server-time");
         const raw = st?.dataset?.serverEpoch || st?.getAttribute?.("data-server-epoch") || "";
         if (raw) {
-          let n = parseInt(String(raw), 10);
-          if (Number.isFinite(n)) {
-            if (n < 1e12) n *= 1000; // seconds -> ms
-            return n;
+          let nextEpochMs = parseInt(String(raw), 10);
+          if (Number.isFinite(nextEpochMs)) {
+            if (nextEpochMs < 1e12) nextEpochMs *= 1000; // seconds -> ms
+
+            // Many pages render a static epoch value. Keep a base and let client elapsed
+            // time advance it so day/week rollovers are detected without manual reset.
+            const nowMs = Date.now();
+            if (__oaServerClockBaseEpochMs !== nextEpochMs || __oaServerClockBaseClientMs <= 0) {
+              __oaServerClockBaseEpochMs = nextEpochMs;
+              __oaServerClockBaseClientMs = nowMs;
+            }
+            const elapsed = Math.max(0, nowMs - __oaServerClockBaseClientMs);
+            return __oaServerClockBaseEpochMs + elapsed;
           }
         }
       } catch {}
