@@ -6447,12 +6447,15 @@ function __oaServerWeekKey() {
 
 // Manual reset helper: clears limited-beast store and re-enables any options we disabled.
 // scope: "all" | "daily" | "weekly"
+// NOTE: Self-contained to avoid closure scope issues with __OA_BEAST_LIMIT_STORE_KEY.
 function __oaResetBeastLimits(scope = "all") {
+  const _STORE_KEY = "oa_beast_weekly_limits_v1";
   const sc = String(scope || "all").toLowerCase();
   try {
-    const limits = __oaReadBeastLimitStore();
+    let limits = {};
+    try { limits = JSON.parse(localStorage.getItem(_STORE_KEY) || "{}") || {}; } catch {}
     if (sc === "all") {
-      localStorage.removeItem(__OA_BEAST_LIMIT_STORE_KEY);
+      localStorage.removeItem(_STORE_KEY);
     } else {
       const kept = {};
       for (const [k, v] of Object.entries(limits || {})) {
@@ -6464,7 +6467,7 @@ function __oaResetBeastLimits(scope = "all") {
           if (!isWeekly) kept[k] = v;
         }
       }
-      localStorage.setItem(__OA_BEAST_LIMIT_STORE_KEY, JSON.stringify(kept));
+      localStorage.setItem(_STORE_KEY, JSON.stringify(kept));
     }
   } catch {}
 
