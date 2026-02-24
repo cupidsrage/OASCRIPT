@@ -5619,7 +5619,8 @@ function gateNextActionAfterWork() {
     // Expose state for external UI (auto combat button etc.)
     window.__oaState = state;
 
-    const log = (m) => console.log(`[AutoCombat] ${m}`);
+    const log = (_m) => {};
+    const autoCombatLog = (..._args) => {};
 
     function safeClick(el) {
       const now = Date.now();
@@ -6872,7 +6873,7 @@ function selectHighestLevelMonsterIfNeeded() {
     select.dispatchEvent(new Event("input", { bubbles: true }));
     select.dispatchEvent(new Event("change", { bubbles: true }));
 
-    console.log("[AutoCombat] PvP Mode: Player targeted:", { id: bestPlayer.value, text: bestPlayer.textContent });
+    autoCombatLog("[AutoCombat] PvP Mode: Player targeted:", { id: bestPlayer.value, text: bestPlayer.textContent });
     return;
   }
 
@@ -6947,7 +6948,7 @@ function selectHighestLevelMonsterIfNeeded() {
       select.dispatchEvent(new Event("input", { bubbles: true }));
       select.dispatchEvent(new Event("change", { bubbles: true }));
 
-      console.log("[AutoCombat] Beast selected (priority):", { id: best.value, lvl: getOptionLevel(best) });
+      autoCombatLog("[AutoCombat] Beast selected (priority):", { id: best.value, lvl: getOptionLevel(best) });
       return;
     }
   }
@@ -6978,7 +6979,7 @@ function selectHighestLevelMonsterIfNeeded() {
             });
             select.dispatchEvent(new Event("input", { bubbles: true }));
             select.dispatchEvent(new Event("change", { bubbles: true }));
-            console.log("[AutoCombat] Pinned monster #" + n + " selected:", pinnedOpt.textContent.trim());
+            autoCombatLog("[AutoCombat] Pinned monster #" + n + " selected:", pinnedOpt.textContent.trim());
           }
           return; // skip normal highest-level logic
         }
@@ -7015,7 +7016,7 @@ function selectHighestLevelMonsterIfNeeded() {
   select.dispatchEvent(new Event("input", { bubbles: true }));
   select.dispatchEvent(new Event("change", { bubbles: true }));
 
-  console.log("[AutoCombat] Highest level monster selected:", { id: best.value, lvl: getOptionLevel(best) });
+  autoCombatLog("[AutoCombat] Highest level monster selected:", { id: best.value, lvl: getOptionLevel(best) });
 }
 
     // Force select a regular monster (NOT a beast) - used when beast limit is reached
@@ -7050,7 +7051,7 @@ function selectHighestLevelMonsterIfNeeded() {
       });
 
       if (!monsterOpts.length) {
-        console.log("[AutoCombat] No regular monsters available to switch to");
+        autoCombatLog("[AutoCombat] No regular monsters available to switch to");
         return false;
       }
 
@@ -7085,7 +7086,7 @@ function selectHighestLevelMonsterIfNeeded() {
       select.dispatchEvent(new Event("input", { bubbles: true }));
       select.dispatchEvent(new Event("change", { bubbles: true }));
 
-      console.log("[AutoCombat] Switched to regular monster (avoiding beast):", { id: best.value, text: best.textContent, lvl: bestLevel });
+      autoCombatLog("[AutoCombat] Switched to regular monster (avoiding beast):", { id: best.value, text: best.textContent, lvl: bestLevel });
       return true;
     }
 
@@ -7144,7 +7145,7 @@ function selectHighestLevelMonsterIfNeeded() {
           const sessionStepCount = Number(sessionStorage.getItem(SESSION_STEP_KEY) || 0);
 
           if (stepCount > 20 || sessionStepCount > 30) {
-            console.log("[AutoCombat] PvE Plane Lock: Too many steps, clearing lock", { stepCount, sessionStepCount });
+            autoCombatLog("[AutoCombat] PvE Plane Lock: Too many steps, clearing lock", { stepCount, sessionStepCount });
             try { localStorage.removeItem(LOCK_KEY); } catch {}
             try { localStorage.removeItem(LASTSTEP_KEY); } catch {}
             try { localStorage.removeItem(STEP_COUNT_KEY); } catch {}
@@ -7186,10 +7187,10 @@ function selectHighestLevelMonsterIfNeeded() {
                 try { localStorage.setItem(STEP_COUNT_KEY, String(stepCount + 1)); } catch {}
 
                 try { localStorage.setItem("oa_autocombat_restore_delay_until_ms_v1", String(nowMs + 1000)); } catch {}try { sessionStorage.setItem("oa_pve_session_step_count", String(sessionStepCount + 1)); } catch {}
-                console.log("[AutoCombat] PvE Plane Lock: stepping plane", { from: cur, to: lock, dir, stepCount: stepCount + 1, sessionStepCount: sessionStepCount + 1 });
+                autoCombatLog("[AutoCombat] PvE Plane Lock: stepping plane", { from: cur, to: lock, dir, stepCount: stepCount + 1, sessionStepCount: sessionStepCount + 1 });
                 return false; // wait for plane change, then retry next tick (repeat until match)
               } else {
-                console.log("[AutoCombat] PvE Plane Lock: cannot step (no button?)", { from: cur, to: lock, dir });
+                autoCombatLog("[AutoCombat] PvE Plane Lock: cannot step (no button?)", { from: cur, to: lock, dir });
               }
             }
           }
@@ -7263,7 +7264,7 @@ selectHighestLevelMonsterIfNeeded(); } catch {}
             const age = Date.now() - (block.timestamp || 0);
             if (age < 60000) {
               justTeleported = true;
-              console.log("[AutoCombat] Beast selected, hard block active - allowing fight");
+              autoCombatLog("[AutoCombat] Beast selected, hard block active - allowing fight");
             }
           }
           // Also check old lock key for backwards compatibility
@@ -7274,7 +7275,7 @@ selectHighestLevelMonsterIfNeeded(); } catch {}
               const age = Date.now() - (lock.timestamp || 0);
               if (age < 60000) {
                 justTeleported = true;
-                console.log("[AutoCombat] Beast selected, recently teleported - allowing fight");
+                autoCombatLog("[AutoCombat] Beast selected, recently teleported - allowing fight");
               }
             }
           }
@@ -7300,7 +7301,7 @@ if (beastOpt) {
               select.value = beastOpt.value;
               select.dispatchEvent(new Event("change", { bubbles: true }));
             }
-            console.log("[AutoCombat] Beast option exists in dropdown - allowing fight");
+            autoCombatLog("[AutoCombat] Beast option exists in dropdown - allowing fight");
             justTeleported = true;
           }
         }
@@ -7427,13 +7428,13 @@ if (beastOpt) {
     const SECURITY_CHECK_COOLDOWN_MS = 3000; // 3 seconds
 
     function resumeAutoCombatIfNeeded() {
-      console.log('[AutoCombat] resumeAutoCombatIfNeeded called');
+      autoCombatLog('[AutoCombat] resumeAutoCombatIfNeeded called');
 
       try {
         const resumeKey = localStorage.getItem(BOTCHECK_RESUME_KEY);
-        console.log('[AutoCombat] BOTCHECK_RESUME_KEY:', resumeKey);
+        autoCombatLog('[AutoCombat] BOTCHECK_RESUME_KEY:', resumeKey);
         if (resumeKey !== "1") {
-          console.log('[AutoCombat] Resume key not set, skipping resume');
+          autoCombatLog('[AutoCombat] Resume key not set, skipping resume');
           return;
         }
       } catch (e) {
@@ -7442,21 +7443,21 @@ if (beastOpt) {
       }
 
       const visible = isBotcheckVisible();
-      console.log('[AutoCombat] Botcheck visible:', visible);
+      autoCombatLog('[AutoCombat] Botcheck visible:', visible);
       if (visible) {
-        console.log('[AutoCombat] Botcheck still visible, skipping resume');
+        autoCombatLog('[AutoCombat] Botcheck still visible, skipping resume');
         return;
       }
 
       try { localStorage.removeItem(BOTCHECK_RESUME_KEY); } catch {}
-      console.log('[AutoCombat] Cleared BOTCHECK_RESUME_KEY');
+      autoCombatLog('[AutoCombat] Cleared BOTCHECK_RESUME_KEY');
 
-      console.log('[AutoCombat] botcheck.pausedAuto:', botcheck.pausedAuto);
-      console.log('[AutoCombat] state.enabled:', state.enabled);
+      autoCombatLog('[AutoCombat] botcheck.pausedAuto:', botcheck.pausedAuto);
+      autoCombatLog('[AutoCombat] state.enabled:', state.enabled);
 
       // AGGRESSIVE: If resume key was set and modal is gone, FORCE RESUME regardless of flags
       // Don't check pausedAuto or state.enabled - just resume!
-      console.log('[AutoCombat] FORCING RESUME (aggressive mode)');
+      autoCombatLog('[AutoCombat] FORCING RESUME (aggressive mode)');
 
       // Set the cleared timestamp and wait 3 seconds before resuming
       securityCheckClearedAt = Date.now();
@@ -7468,7 +7469,7 @@ if (beastOpt) {
           return;
         }
 
-        console.log('[AutoCombat] Resuming now! (forced)');
+        autoCombatLog('[AutoCombat] Resuming now! (forced)');
         botcheck.pausedAuto = false;
 
         // Resume script AutoCombat where it left off
@@ -7550,13 +7551,13 @@ if (beastOpt) {
         // Remember we should resume if we were running.
         if (state.enabled) {
           botcheck.pausedAuto = true;
-          console.log('[AutoCombat] Set botcheck.pausedAuto = true');
+          autoCombatLog('[AutoCombat] Set botcheck.pausedAuto = true');
           try {
             localStorage.setItem(BOTCHECK_RESUME_KEY, "1");
-            console.log('[AutoCombat] Set BOTCHECK_RESUME_KEY = 1');
+            autoCombatLog('[AutoCombat] Set BOTCHECK_RESUME_KEY = 1');
           } catch {}
         } else {
-          console.log('[AutoCombat] state.enabled was false, not setting resume flag');
+          autoCombatLog('[AutoCombat] state.enabled was false, not setting resume flag');
         }
 
         state.enabled = false;
@@ -7602,7 +7603,7 @@ if (beastOpt) {
             if (savedPlane) {
               localStorage.setItem("oa_pve_plane_lock_v1", savedPlane);
               localStorage.removeItem("oa_beast_return_plane_v1");
-              console.log("[AutoCombat] No beasts - restored PvE plane lock:", savedPlane);
+              autoCombatLog("[AutoCombat] No beasts - restored PvE plane lock:", savedPlane);
               // Immediately trigger plane stepping
               try { planeMgr.tick("beast_restore_combat"); } catch {}
             }
@@ -7643,7 +7644,7 @@ if (beastOpt) {
         const now = Date.now();
         if (now - (state._dbgLastMissingBtnAt || 0) > 1200) {
           state._dbgLastMissingBtnAt = now;
-          console.log("[AutoCombat Debug] Combat button not found or not clickable");
+          autoCombatLog("[AutoCombat Debug] Combat button not found or not clickable");
         }
         return;
       }
@@ -7651,7 +7652,7 @@ if (beastOpt) {
         const now = Date.now();
         if (now - (state._dbgLastBtnNotTopAt || 0) > 1200) {
           state._dbgLastBtnNotTopAt = now;
-          console.log("[AutoCombat Debug] Combat button not on screen/top");
+          autoCombatLog("[AutoCombat Debug] Combat button not on screen/top");
         }
         return;
       }
@@ -7703,7 +7704,7 @@ if (beastOpt) {
       if (text !== state._dbgLastBtnText || (nowTxt - (state._dbgLastBtnTextAt || 0)) > 1200) {
         state._dbgLastBtnText = text;
         state._dbgLastBtnTextAt = nowTxt;
-        console.log("[AutoCombat Debug] Button text:", text);
+        autoCombatLog("[AutoCombat Debug] Button text:", text);
       }
 
       if (state.holdForBeastTeleport) {
@@ -7718,14 +7719,14 @@ if (beastOpt) {
         return;
       }
       if (text === "Start (F)" || text === "Duel (F)") {
-        console.log("[AutoCombat Debug] Found Start/Duel button, checking canStartSelectedFight...");
+        autoCombatLog("[AutoCombat Debug] Found Start/Duel button, checking canStartSelectedFight...");
         if (!canStartSelectedFight()) {
-          console.log("[AutoCombat Debug] canStartSelectedFight returned false");
+          autoCombatLog("[AutoCombat Debug] canStartSelectedFight returned false");
           // Reduced penalty (was 350ms) - proactive target observer should catch most cases
           state.nextEligibleActionAt = Math.max(state.nextEligibleActionAt || 0, Date.now() + 100);
           return;
         }
-        console.log("[AutoCombat Debug] Clicking Start button!");
+        autoCombatLog("[AutoCombat Debug] Clicking Start button!");
         recordAttack(true);
         clickCombatAction(combatBtn);
         gateNextActionAfterWork();
@@ -7861,7 +7862,7 @@ function ensureCombatObserver() {
         });
       }
 
-      console.log("[AutoCombat] Dedicated button observer attached");
+      autoCombatLog("[AutoCombat] Dedicated button observer attached");
     }
     attachButtonObserver();
   }
@@ -7884,7 +7885,7 @@ function ensureCombatObserver() {
         attributeFilter: ['style'], // Only care about style
       });
 
-      console.log("[AutoCombat] Dedicated delay bar observer attached");
+      autoCombatLog("[AutoCombat] Dedicated delay bar observer attached");
     }
     attachDelayBarObserver();
   }
@@ -8042,7 +8043,7 @@ function stopLoop() {
         const tab = url.searchParams.get("tab") || "combat";
         if (tab !== "combat") {
           url.searchParams.set("tab", "combat");
-          console.log("[AutoCombat] Switching to combat tab for", reason || "action");
+          autoCombatLog("[AutoCombat] Switching to combat tab for", reason || "action");
           location.href = url.toString();
           return false;
         }
@@ -8681,18 +8682,18 @@ if (e.key === "[" || e.code === "BracketLeft") handled = (typeof clickPlaneStep 
     // CRITICAL: Check for pending resume on initialization
     // This handles cases where page reloaded after security check passed
     setTimeout(() => {
-      console.log('[AutoCombat] Initialization: checking for pending resume...');
+      autoCombatLog('[AutoCombat] Initialization: checking for pending resume...');
       const resumeKey = localStorage.getItem(BOTCHECK_RESUME_KEY);
-      console.log('[AutoCombat] Initialization: BOTCHECK_RESUME_KEY =', resumeKey);
+      autoCombatLog('[AutoCombat] Initialization: BOTCHECK_RESUME_KEY =', resumeKey);
 
       if (resumeKey === "1") {
-        console.log('[AutoCombat] Initialization: Found pending resume, triggering...');
+        autoCombatLog('[AutoCombat] Initialization: Found pending resume, triggering...');
         // Wait a bit for everything to be ready, then try to resume
         setTimeout(() => {
           resumeAutoCombatIfNeeded();
         }, 1000);
       } else {
-        console.log('[AutoCombat] Initialization: No pending resume');
+        autoCombatLog('[AutoCombat] Initialization: No pending resume');
       }
     }, 500);
 
@@ -19502,13 +19503,13 @@ Read the image and respond with exactly those two lines.`;
               // Turn OFF
               window.__oaState.enabled = false;
               try { localStorage.setItem("oa_autocombat_enabled_v1", "false"); } catch {}
-              console.log("[AutoCombat] Button: Disabled");
+              autoCombatLog("[AutoCombat] Button: Disabled");
             } else {
               // Turn ON - dispatch F1 to trigger full enable logic
               document.dispatchEvent(new KeyboardEvent("keydown", {
                 key: "F1", code: "F1", keyCode: 112, bubbles: true, cancelable: true
               }));
-              console.log("[AutoCombat] Button: Enabled");
+              autoCombatLog("[AutoCombat] Button: Enabled");
             }
             // Update button immediately, then again after state settles
             updateBtn();
