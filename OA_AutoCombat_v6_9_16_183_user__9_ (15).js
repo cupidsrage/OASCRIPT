@@ -2852,6 +2852,109 @@ Respond with ONLY the analysis, no preamble.` }
     };
   }
 
+  function buildAdaptiveCapSolverPlans(stats, currentPromptPattern) {
+    const history = Array.isArray(stats?.history) ? stats.history.slice(0, 20) : [];
+    const promptPattern = String(currentPromptPattern || 'unknown');
+    const comboMap = new Map();
+
+    for (const entry of history) {
+      const attempts = Array.isArray(entry?.capSolverAttempts) ? entry.capSolverAttempts : [];
+      if (!attempts.length) continue;
+
+      const selectedAttempt = attempts.find(a => a && a.accepted) || attempts[attempts.length - 1];
+      if (!selectedAttempt) continue;
+
+      const profile = String(selectedAttempt.profileResolved || selectedAttempt.profileRequested || 'auto');
+      const rawScore = Number(selectedAttempt?.options?.score);
+      const score = Number.isFinite(rawScore) ? rawScore : 0.9;
+      const scoreKey = score.toFixed(2);
+      const entryPattern = String(entry?.rejectionContext?.promptPattern || 'unknown');
+      const key = `${entryPattern}|${profile}|${scoreKey}`;
+
+      if (!comboMap.has(key)) {
+        comboMap.set(key, {
+          promptPattern: entryPattern,
+          profile,
+          score,
+          total: 0,
+          success: 0
+        });
+      }
+
+      const agg = comboMap.get(key);
+      agg.total += 1;
+      if (entry?.passed === true) agg.success += 1;
+    }
+
+    const ranked = Array.from(comboMap.values())
+      .map(combo => ({
+        ...combo,
+        successRate: combo.total > 0 ? combo.success / combo.total : 0,
+        samePrompt: combo.promptPattern === promptPattern
+      }))
+      .sort((a, b) => {
+        if (a.samePrompt !== b.samePrompt) return a.samePrompt ? -1 : 1;
+        if (b.successRate !== a.successRate) return b.successRate - a.successRate;
+        if (b.success !== a.success) return b.success - a.success;
+        return b.total - a.total;
+      });
+
+    const plans = [];
+    const seenPlanKeys = new Set();
+
+    const pushPlan = (profile, score, reasonTags = []) => {
+      const scoreNum = Number(score);
+      const safeProfile = profile || 'auto';
+      const safeScore = Number.isFinite(scoreNum) ? scoreNum : 0.9;
+      const dedupeKey = `${safeProfile}|${safeScore.toFixed(2)}`;
+      if (seenPlanKeys.has(dedupeKey)) return false;
+      seenPlanKeys.add(dedupeKey);
+      plans.push({
+        profile: safeProfile,
+        optionOverrides: { score: safeScore },
+        variation: `adaptive_${safeProfile}_score_${String(safeScore).replace('.', '_')}`,
+        reasonTags
+      });
+      return true;
+    };
+
+    if (ranked.length > 0) {
+      const best = ranked[0];
+      pushPlan(best.profile, best.score, [
+        best.samePrompt ? 'seed:prompt_match' : 'seed:global_best',
+        `sr:${(best.successRate * 100).toFixed(0)}%`,
+        `n:${best.total}`
+      ]);
+    }
+
+    for (const combo of ranked) {
+      if (plans.length >= 4) break; // seed + up to 3 diversified fallbacks
+      const diversified = !plans.some(existing => {
+        const existingScore = Number(existing?.optionOverrides?.score);
+        return existing.profile === combo.profile && Math.abs(existingScore - combo.score) < 0.01;
+      });
+      if (!diversified) continue;
+      pushPlan(combo.profile, combo.score, [
+        combo.samePrompt ? 'fallback:prompt_match' : 'fallback:cross_prompt',
+        `sr:${(combo.successRate * 100).toFixed(0)}%`,
+        `n:${combo.total}`
+      ]);
+    }
+
+    const defaults = [
+      { profile: 'auto', score: 0.9, reasonTags: ['default:baseline'] },
+      { profile: 'raw', score: 0.9, reasonTags: ['default:profile_raw'] },
+      { profile: 'auto', score: 0.85, reasonTags: ['default:score_0_85'] }
+    ];
+
+    for (const fallback of defaults) {
+      if (plans.length >= 4) break;
+      pushPlan(fallback.profile, fallback.score, fallback.reasonTags);
+    }
+
+    return plans;
+  }
+
   async function autoSolveWithCapSolver() {
     if (!loadCapSolverEnabled()) {
       console.log('[CapSolver] Auto-solve disabled in settings');
@@ -2929,20 +3032,32 @@ Respond with ONLY the analysis, no preamble.` }
       console.log('[CapSolver] Image dimensions:', captchaImg.naturalWidth, 'x', captchaImg.naturalHeight);
       console.log('[CapSolver] Image complete:', captchaImg.complete);
 
-      // Build staged retry plans. First attempt uses baseline settings, retries vary one dimension each.
-      const attemptPlans = [
-        { profile: 'auto', optionOverrides: {}, variation: 'baseline' },
-        { profile: 'raw', optionOverrides: {}, variation: 'retry_profile_raw' },
-        { profile: 'auto', optionOverrides: { score: 0.85 }, variation: 'retry_score_0_85' }
-      ];
+      const currentPromptPattern = classifyBotcheckPromptPattern(modalText);
+      const planningStats = loadCapSolverStats();
+      const attemptPlans = buildAdaptiveCapSolverPlans(planningStats, currentPromptPattern);
+      console.log('[CapSolver] Adaptive plans selected:', attemptPlans.map((plan, idx) => ({
+        order: idx + 1,
+        profile: plan.profile,
+        score: Number(plan?.optionOverrides?.score),
+        variation: plan.variation,
+        reasonTags: plan.reasonTags || []
+      })));
 
       if (capSolverOneShotOverride) {
         attemptPlans.unshift({
           profile: capSolverOneShotOverride.profile || 'raw',
           optionOverrides: { ...(capSolverOneShotOverride.optionOverrides || {}) },
-          variation: capSolverOneShotOverride.variation || 'recovery_override'
+          variation: capSolverOneShotOverride.variation || 'recovery_override',
+          reasonTags: ['override:one_shot_recovery']
         });
         console.log('[CapSolver] Applying one-shot recovery override:', capSolverOneShotOverride);
+        console.log('[CapSolver] Final plans (override prepended):', attemptPlans.map((plan, idx) => ({
+          order: idx + 1,
+          profile: plan.profile,
+          score: Number(plan?.optionOverrides?.score),
+          variation: plan.variation,
+          reasonTags: plan.reasonTags || []
+        })));
         capSolverOneShotOverride = null;
       }
 
