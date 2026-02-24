@@ -1573,6 +1573,38 @@ if (!location.hostname.endsWith('olympusawakened.com')) return;
     };
   }
 
+  function parseBotcheckTimeLeftSeconds(modal) {
+    const timerEl = modal?.querySelector?.('[data-botcheck-timer], .botcheck-timer, [class*="timer"]');
+    const timerText = String(timerEl?.textContent || '').trim();
+    const modalText = String(modal?.textContent || modal?.innerText || '').trim();
+    const sources = [timerText, modalText].filter(Boolean);
+
+    for (const source of sources) {
+      const mmssMatch = source.match(/(\d{1,2})\s*:\s*(\d{2})/);
+      if (mmssMatch) {
+        const mm = Number(mmssMatch[1]);
+        const ss = Number(mmssMatch[2]);
+        if (Number.isFinite(mm) && Number.isFinite(ss)) {
+          return Math.max(0, (mm * 60) + ss);
+        }
+      }
+
+      const secondsMatch = source.match(/(?:time\s*left\D*)?(\d{1,3})\s*(?:s|sec|secs|seconds?)\b/i);
+      if (secondsMatch) {
+        const secs = Number(secondsMatch[1]);
+        if (Number.isFinite(secs)) return Math.max(0, secs);
+      }
+
+      const fallbackMatch = source.match(/time\s*left\D*(\d{1,3})\b/i);
+      if (fallbackMatch) {
+        const secs = Number(fallbackMatch[1]);
+        if (Number.isFinite(secs)) return Math.max(0, secs);
+      }
+    }
+
+    return null;
+  }
+
   function buildRecoveryOverride(context) {
     const prevProfile = String(context?.preprocessProfile || 'auto').toLowerCase();
     const alternateProfile = prevProfile === 'raw' ? 'high_contrast' : 'raw';
@@ -3398,10 +3430,42 @@ Respond with ONLY the analysis, no preamble.` }
 
       console.log('[CapSolver] Final answer to enter:', finalAnswer);
 
-      // Random delay between 7-14 seconds to look more human
-      const humanDelay = Math.floor(Math.random() * 3000) + 5000; // 7000-14000ms
-      console.log(`[CapSolver] Waiting ${(humanDelay/1000).toFixed(1)}s before entering solution (human delay)...`);
-      await new Promise(resolve => setTimeout(resolve, humanDelay));
+      const ADAPTIVE_DELAY_MIN_MS = 1200;
+      const ADAPTIVE_DELAY_MAX_MS = 4500;
+      const ADAPTIVE_LOW_TIME_SECONDS = 10;
+      const ADAPTIVE_SAFETY_BUFFER_SECONDS = 2;
+      const ADAPTIVE_HARD_CUTOFF_SECONDS = 3;
+      const QUICK_JITTER_MAX_MS = 180;
+
+      const timeLeftAtSolve = parseBotcheckTimeLeftSeconds(modal);
+      const boundedHumanDelay = Math.floor(Math.random() * (ADAPTIVE_DELAY_MAX_MS - ADAPTIVE_DELAY_MIN_MS + 1)) + ADAPTIVE_DELAY_MIN_MS;
+      let submitDelayMs = boundedHumanDelay;
+      const latestAttemptMeta = attemptHistory[attemptHistory.length - 1] || null;
+
+      if (Number.isFinite(timeLeftAtSolve)) {
+        const budgetMs = Math.max(0, (timeLeftAtSolve - ADAPTIVE_SAFETY_BUFFER_SECONDS) * 1000);
+        const lowTime = timeLeftAtSolve < ADAPTIVE_LOW_TIME_SECONDS;
+        const hardCutoff = (timeLeftAtSolve - ADAPTIVE_SAFETY_BUFFER_SECONDS) <= ADAPTIVE_HARD_CUTOFF_SECONDS;
+
+        if (hardCutoff || budgetMs <= QUICK_JITTER_MAX_MS || lowTime) {
+          submitDelayMs = Math.floor(Math.random() * (QUICK_JITTER_MAX_MS + 1));
+          console.log(`[CapSolver] Adaptive submit: low remaining time (${timeLeftAtSolve}s), using minimal delay ${submitDelayMs}ms`);
+        } else {
+          submitDelayMs = Math.min(boundedHumanDelay, budgetMs);
+          console.log(`[CapSolver] Adaptive submit: ${timeLeftAtSolve}s left, bounded delay ${submitDelayMs}ms (budget ${Math.floor(budgetMs)}ms)`);
+        }
+      } else {
+        console.log(`[CapSolver] Adaptive submit: timer unavailable, using bounded delay ${submitDelayMs}ms`);
+      }
+
+      if (latestAttemptMeta) {
+        latestAttemptMeta.timeLeftAtSolve = Number.isFinite(timeLeftAtSolve) ? timeLeftAtSolve : null;
+        latestAttemptMeta.submitDelayMs = submitDelayMs;
+      }
+
+      if (submitDelayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, submitDelayMs));
+      }
 
       const input = modal.querySelector('[data-botcheck-input]');
       if (!input) {
