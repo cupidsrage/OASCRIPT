@@ -2852,6 +2852,74 @@ Respond with ONLY the analysis, no preamble.` }
     };
   }
 
+  function countCapSolverCharMismatches(a, b) {
+    const left = String(a || '');
+    const right = String(b || '');
+    const maxLen = Math.max(left.length, right.length);
+    let mismatches = Math.abs(left.length - right.length);
+    const minLen = Math.min(left.length, right.length);
+    for (let i = 0; i < minLen; i++) {
+      if (left[i] !== right[i]) mismatches++;
+    }
+    return Math.min(maxLen, mismatches);
+  }
+
+  function computeCapSolverAmbiguityPenalty(normalizedText) {
+    const normalized = String(normalizedText || '');
+    if (!normalized) return 0.45;
+
+    let penalty = 0;
+    if (/[0O]/.test(normalized) && normalized.includes('0') && normalized.includes('O')) penalty += 0.18;
+    if (/[I1L]/.test(normalized) && normalized.includes('1') && (normalized.includes('I') || normalized.includes('L'))) penalty += 0.18;
+    if (/(.)\1{1,}/.test(normalized)) penalty += 0.08;
+    if (/^(.)\1{5}$/.test(normalized)) penalty += 0.22;
+    return Math.min(0.55, penalty);
+  }
+
+  function computeCapSolverConsensus(firstAnalysis, secondAnalysis = null) {
+    const firstNorm = String(firstAnalysis?.normalized || '');
+    const secondNorm = String(secondAnalysis?.normalized || '');
+    const firstValid = !!firstAnalysis?.valid;
+    const secondValid = !!secondAnalysis?.valid;
+
+    let agreement = 'single';
+    let confidence = firstValid ? 0.76 : 0.38;
+    let consensusCount = firstValid ? 1 : 0;
+    let chosen = firstNorm;
+
+    if (secondAnalysis) {
+      const mismatches = countCapSolverCharMismatches(firstNorm, secondNorm);
+
+      if (firstNorm && secondNorm && firstNorm === secondNorm) {
+        agreement = 'exact';
+        confidence = 0.96;
+        chosen = firstNorm;
+        consensusCount = 2;
+      } else if (firstNorm && secondNorm && mismatches === 1) {
+        agreement = 'near';
+        confidence = 0.74;
+        chosen = firstValid ? firstNorm : secondNorm;
+        consensusCount = 1;
+      } else {
+        agreement = 'low';
+        confidence = 0.44;
+        chosen = firstValid ? firstNorm : (secondValid ? secondNorm : '');
+        consensusCount = chosen ? 1 : 0;
+      }
+    }
+
+    const ambiguityPenalty = computeCapSolverAmbiguityPenalty(chosen || firstNorm || secondNorm);
+    const invalidPenalty = (!chosen || !/^[A-Z0-9]{6}$/.test(chosen)) ? 0.30 : 0;
+    confidence = Math.max(0, Math.min(1, confidence - ambiguityPenalty - invalidPenalty));
+
+    return {
+      confidence,
+      agreement,
+      consensusCount,
+      chosenNormalized: chosen
+    };
+  }
+
   function buildAdaptiveCapSolverPlans(stats, currentPromptPattern) {
     const history = Array.isArray(stats?.history) ? stats.history.slice(0, 20) : [];
     const promptPattern = String(currentPromptPattern || 'unknown');
@@ -3084,7 +3152,10 @@ Respond with ONLY the analysis, no preamble.` }
       const baseOptions = { ...defaultOptions, ...customOptions };
       console.log('[CapSolver] Base options:', baseOptions);
 
-      // Stage 0: submit once, then retry only when output is invalid/known-bad.
+      const CAPSOLVER_CONFIDENCE_THRESHOLD = 0.68;
+      const CAPSOLVER_WEAK_FIRST_RESULT_THRESHOLD = 0.82;
+
+      // Stage 0: submit once, then retry with plan diversification when confidence is weak.
       let solution = '';
       const attemptHistory = [];
 
@@ -3152,11 +3223,34 @@ Respond with ONLY the analysis, no preamble.` }
 
         let rawSolution = '';
         let analysis;
+        let secondaryRawSolution = '';
+        let secondaryAnalysis = null;
+        let confidenceSummary;
         try {
           rawSolution = await solver.solveImageToText(preparedImageData, attemptOptions);
           analysis = analyzeCapSolverOutput(rawSolution);
+
+          confidenceSummary = computeCapSolverConsensus(analysis);
+          const shouldRunConsensusSolve = !analysis.valid || confidenceSummary.confidence < CAPSOLVER_WEAK_FIRST_RESULT_THRESHOLD;
+
+          if (shouldRunConsensusSolve) {
+            secondaryRawSolution = await solver.solveImageToText(preparedImageData, attemptOptions);
+            secondaryAnalysis = analyzeCapSolverOutput(secondaryRawSolution);
+            confidenceSummary = computeCapSolverConsensus(analysis, secondaryAnalysis);
+          }
         } catch (e) {
           analysis = { normalized: '', valid: false, reasons: ['solver_error:' + (e.message || 'unknown')] };
+          confidenceSummary = computeCapSolverConsensus(analysis);
+        }
+
+        const finalNormalized = confidenceSummary.chosenNormalized || analysis.normalized;
+        const accepted = analysis.valid && confidenceSummary.confidence >= CAPSOLVER_CONFIDENCE_THRESHOLD && /^[A-Z0-9]{6}$/.test(finalNormalized);
+        const rejectedReasons = [...(analysis.reasons || [])];
+        if (secondaryAnalysis?.reasons?.length) {
+          rejectedReasons.push(...secondaryAnalysis.reasons.map(r => `secondary_${r}`));
+        }
+        if (!accepted && confidenceSummary.confidence < CAPSOLVER_CONFIDENCE_THRESHOLD) {
+          rejectedReasons.push(`low_confidence:${confidenceSummary.confidence.toFixed(2)}`);
         }
 
         const attemptMeta = {
@@ -3174,24 +3268,30 @@ Respond with ONLY the analysis, no preamble.` }
             maxLength: attemptOptions.maxLength
           },
           rawSolution: String(rawSolution || ''),
-          normalizedSolution: analysis.normalized,
-          accepted: analysis.valid,
-          rejectedReasons: analysis.reasons,
+          secondaryRawSolution: String(secondaryRawSolution || ''),
+          normalizedSolution: finalNormalized,
+          secondaryNormalizedSolution: secondaryAnalysis?.normalized || '',
+          accepted,
+          confidence: Number(confidenceSummary.confidence.toFixed(3)),
+          consensusCount: confidenceSummary.consensusCount,
+          agreement: confidenceSummary.agreement,
+          rejectedReasons,
           at: Date.now()
         };
 
         attemptHistory.push(attemptMeta);
         console.log('[CapSolver] Attempt result:', attemptMeta);
 
-        if (analysis.valid) {
-          solution = analysis.normalized;
+        if (accepted) {
+          solution = finalNormalized;
           break;
         }
       }
 
       if (!solution) {
         lastCapSolverAttemptHistory = attemptHistory;
-        throw new Error('No acceptable solution from staged retries');
+        await triggerBotcheckRecoveryOnReject('low_confidence_or_invalid_solution', captureBotcheckContext(modal, baseOptions, null), true);
+        throw new Error('No acceptable high-confidence solution from staged retries');
       }
 
       lastCapSolverAttemptHistory = attemptHistory;
