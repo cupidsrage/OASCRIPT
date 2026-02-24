@@ -19015,7 +19015,20 @@ Read the image and respond with exactly those two lines.`;
 
       // ── SC Solver Selection ──
       const choice = getSolverChoice();
+      const scStats = (typeof loadCapSolverStats === "function") ? loadCapSolverStats() : null;
+      const capAttempts = Number(scStats?.passed || 0) + Number(scStats?.rejected || 0);
+      const capPassRate = capAttempts > 0 ? ((Number(scStats.passed || 0) / capAttempts) * 100) : 0;
+      const capFailRate = capAttempts > 0 ? ((Number(scStats.rejected || 0) / capAttempts) * 100) : 0;
       html += `<div class="sa-sect"><div class="sa-sect-title">\uD83D\uDD12 Security Check Solver</div>`;
+      html += `<div style="margin-bottom:5px;padding:5px;border:1px solid rgba(255,255,255,0.08);border-radius:4px;background:rgba(0,0,0,0.22);">`;
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;margin-bottom:2px;">
+        <span style="color:#8b5cf6;font-weight:600;">CapSolver Pass/Fail</span>
+        <span style="color:#94a3b8;">${capAttempts} tracked</span>
+      </div>`;
+      html += `<div class="sa-row"><span>Pass Rate</span><span style="color:#4ade80;font-weight:700;">${pct(capPassRate)}</span></div>`;
+      html += `<div class="sa-row"><span>Fail Rate</span><span style="color:#f87171;font-weight:700;">${pct(capFailRate)}</span></div>`;
+      html += `<div style="font-size:9px;color:#64748b;margin-top:2px;">Pass ${fmt(Number(scStats?.passed || 0))} · Fail ${fmt(Number(scStats?.rejected || 0))}</div>`;
+      html += `</div>`;
       html += `<div style="display:flex;gap:3px;margin-top:2px;">`;
       for (const opt of [["capsolver","CapSolver"],["claude","Claude AI"],["off","Off"]]) {
         const sel = choice === opt[0];
